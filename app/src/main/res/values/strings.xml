@@ -1,0 +1,62 @@
+<resources>
+    <string name="app_name">异景彩花机</string>
+    <string name="temperature">温度</string>
+    <string name="motor_1_speed">进料电机速度</string>
+    <string name="dc_supply_voltage">直流供电电压</string>
+    <string name="motor_2_speed">刮料电机速度</string>
+    <string name="motor_3_speed">吹风电机速度</string>
+    <string name="motor_4_speed">备用电机速度</string>
+    <string name="dmx_address">DMX地址</string>
+    <string name="pitch">倾角</string>
+    <string name="ultrasonic_ranging">超声波测距</string>
+    <string name="infrared_distance_measurement">红外测距</string>
+    <string name="device_id">设备ID</string>
+
+    <string name="message_permission_rationale">程序只有满足下列权限才能正常操作:\n\n%1$s</string>
+    <string name="message_permission_always_failed">程序需要下列权限, 请在设置中打开:\n\n%1$s</string>
+    <string name="tip">提示</string>
+    <string name="resume">唤醒</string>
+    <string name="cancel">取消</string>
+    <string name="set">设置</string>
+    <string name="no">否</string>
+
+    <string name="title_activity_register">注册</string>
+    <string name="title_activity_reset_password">重置密码</string>
+
+    <!-- Strings related to login -->
+    <string name="prompt_username">用户名/手机号</string>
+    <string name="prompt_password">密码</string>
+    <string name="prompt_verify_code">验证码</string>
+    <string name="action_sign_in">登录</string>
+    <string name="action_sign_in_short">登录</string>
+    <string name="action_register">注册</string>
+    <string name="error_login_failed">登录失败，因为：\n%1$s</string>
+    <string name="error_register_failed">注册失败，因为：\n%1$s</string>
+    <string name="error_reset_password_failed">重置密码失败，因为：\n%1$s</string>
+    <string name="forgot_password">忘记密码？</string>
+    <string name="register">注册</string>
+    <string name="jet">喷射</string>
+    <string name="jet_stop">停止喷射</string>
+    <string name="rest_time">剩余时间</string>
+    <string name="add_material">加料</string>
+    <string name="gualiao_time">刮料时间</string>
+    <string name="register_success">注册成功</string>
+    <string name="operation_success">操作成功</string>
+    <string name="action_reset_password">重置密码</string>
+    <string name="get_verify_code">获取验证码</string>
+    <string name="login_success">登录成功</string>
+    <string name="send_verify_code_success">成功发送验证码</string>
+    <string name="get_verify_code_later">%1$d秒后才能重新获取</string>
+    <string name="get_verify_code_failed">获取验证码失败，因为\n%1$s</string>
+    <string name="reset_password_success">重置成功</string>
+    <string name="error_cannot_empty">不能为空</string>
+    <string name="duration">时长</string>
+    <string name="delay">延时</string>
+    <string name="height">高度</string>
+
+
+    <string name="control">控制</string>
+    <string name="shop">商城</string>
+    <string name="my">我的</string>
+    <string name="device">设备</string>
+</resources>

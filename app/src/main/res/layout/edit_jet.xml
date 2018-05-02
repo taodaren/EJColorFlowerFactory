@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="10dp"
+    android:paddingEnd="20dp"
+    android:paddingStart="20dp">
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_weight="1"
+                    android:text="@string/delay" />
+
+                <com.lantouzi.wheelview.WheelView
+                    android:id="@+id/et_jet_delay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_weight="1"
+                    app:lwvAdditionalCenterMark="毫秒"
+                    app:lwvCenterMarkTextSize="32sp"
+                    app:lwvHighlightColor="@color/colorHighlightTempLow"
+                    app:lwvMarkColor="@color/colorTempMark"
+                    app:lwvMarkTextColor="@color/colorTempTextMark"
+                    app:lwvMarkTextSize="16sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_weight="1"
+                    android:text="@string/duration" />
+
+
+                <cn.carbswang.android.numberpickerview.library.NumberPickerView
+                    android:id="@+id/et_jet_duration_min"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    app:npv_HintText="分"
+                    app:npv_ItemPaddingHorizontal="5dp"
+                    app:npv_ItemPaddingVertical="5dp"
+                    app:npv_RespondChangeOnDetached="false"
+                    app:npv_TextSizeNormal="16sp"
+                    app:npv_TextSizeSelected="20sp"
+                    app:npv_WrapSelectorWheel="true" />
+
+                <cn.carbswang.android.numberpickerview.library.NumberPickerView
+                    android:id="@+id/et_jet_duration_sec"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    app:npv_HintText="秒"
+                    app:npv_ItemPaddingHorizontal="5dp"
+                    app:npv_ItemPaddingVertical="5dp"
+                    app:npv_RespondChangeOnDetached="false"
+                    app:npv_TextSizeNormal="16sp"
+                    app:npv_TextSizeSelected="20sp"
+                    app:npv_WrapSelectorWheel="true" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_weight="1"
+                    android:text="@string/height" />
+
+                <com.lantouzi.wheelview.WheelView
+                    android:id="@+id/et_jet_high"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_weight="1"
+                    app:lwvCenterMarkTextSize="32sp"
+                    app:lwvHighlightColor="@color/colorHighlightTempLow"
+                    app:lwvMarkColor="@color/colorTempMark"
+                    app:lwvMarkTextColor="@color/colorTempTextMark"
+                    app:lwvMarkTextSize="16sp" />
+        </LinearLayout>
+
+</LinearLayout>
