@@ -14,10 +14,11 @@ public class GoEditDeviceToGroup {
     public interface OnFinished extends GeneralRequest.OnFinished<Result>{}
 
     public static class Request extends GeneralRequest<Result> {
-        public Request(long member_id, long group_id, Activity activity, GoEditDeviceToGroup.OnFinished callback){
+        public Request(long member_id, String token, long group_id, Activity activity, GoEditDeviceToGroup.OnFinished callback){
             super(activity, callback);
             setUrl(Settings.SERVER_URL + "goEditDeviceToGroup");
             addField("member_id", member_id);
+            addField("token", token);
             addField("group_id", group_id);
         }
     }

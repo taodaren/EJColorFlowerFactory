@@ -53,14 +53,14 @@ public class LoginUnitTest {
     }
 
     @Test
-    public void login_test()throws Exception{
+    public void login_test(){
         assertEquals(login_test("13810932887", "12345678"), "OK");
         assertEquals(login_test("138109327", "123"), "手机号码或密码不正确");
     }
 
 
     @Test
-    public void register_test()throws Exception{
+    public void register_test(){
         new Register.Request("13810932887", "12345678", "12345678", "8963",null,
                 new GeneralRequest.OnFinished<GeneralResult>(){
                     @Override
@@ -82,7 +82,7 @@ public class LoginUnitTest {
     }
 
     @Test
-    public void find_password_test()throws Exception{
+    public void find_password_test(){
         new ResetPassword.Request("13810932887", "123", "123", "8963",null,
             new GeneralRequest.OnFinished<GeneralResult>(){
                 @Override
@@ -104,7 +104,7 @@ public class LoginUnitTest {
     }
 
     @Test
-    public void send_message_test()throws Exception{
+    public void send_message_test(){
         new GetVerifyCode.Request("13810932887", null,
                 new GeneralRequest.OnFinished<GeneralResult>() {
                     @Override

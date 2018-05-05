@@ -17,6 +17,7 @@ import android.widget.ArrayAdapter;
 import android.widget.CheckedTextView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.box_tech.fireworksmachine.device.Device;
 import com.box_tech.fireworksmachine.device.DeviceConfig;
@@ -43,10 +44,12 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
     private final Map<String, Protocol> mProtocolList = new ArrayMap<>();
 
     private final static int ACK_TIMEOUT = 1000;
+    @SuppressWarnings("SpellCheckingInspection")
     private final static ParcelUuid UUID_GATT_SERVICE
             = ParcelUuid.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
     //private final static UUID UUID_GATT_CHARACTERISTIC_NOTIFY
     //        = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
+    @SuppressWarnings("SpellCheckingInspection")
     private final static UUID UUID_GATT_CHARACTERISTIC_WRITE
             = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
 
@@ -70,9 +73,43 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
 
         ViewPager vp = findViewById(R.id.page);
         vp.setAdapter(new PageAdapter(this.getSupportFragmentManager()));
+        vp.addOnPageChangeListener(mPageChangeListener);
+        mPageChangeListener.onPageSelected(0);
+        setupCategoryClick();
 
         showDeviceAddressSelectDialog();
     }
+
+    private final int[] category_id = new int[]{
+            R.id.category_device,
+            R.id.category_control,
+            R.id.category_shop,
+            R.id.category_my
+    };
+
+    private void setupCategoryClick(){
+        for(int i=0;i<category_id.length;i++){
+            TextView tv = findViewById(category_id[i]);
+            final int position = i;
+            tv.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ViewPager vp = findViewById(R.id.page);
+                    vp.setCurrentItem(position);
+                }
+            });
+        }
+    }
+
+    private final ViewPager.OnPageChangeListener mPageChangeListener = new ViewPager.SimpleOnPageChangeListener() {
+        @Override
+        public void onPageSelected(int position) {
+            for(int i=0;i<category_id.length;i++){
+                TextView tv = findViewById(category_id[i]);
+                tv.setSelected(i==position);
+            }
+        }
+    };
 
 
     @Override

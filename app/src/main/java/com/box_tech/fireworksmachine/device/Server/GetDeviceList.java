@@ -14,10 +14,11 @@ public class GetDeviceList {
     public interface OnFinished extends GeneralRequest.OnFinished<Result> {}
 
     public static class Request extends GeneralRequest<Result>{
-        public Request(long member_id, Activity activity, GetDeviceList.OnFinished callback){
+        public Request(long member_id, String token, Activity activity, GetDeviceList.OnFinished callback){
             super(activity, callback);
             setUrl(Settings.SERVER_URL + "device_list");
             addField("member_id", member_id);
+            addField("token", token);
         }
     }
 

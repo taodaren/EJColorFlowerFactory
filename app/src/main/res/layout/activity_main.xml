@@ -9,7 +9,15 @@
         android:id="@+id/page"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/category_bar" />
+        android:layout_above="@+id/seperator" />
+
+    <LinearLayout
+        android:id="@+id/seperator"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_above="@+id/category_bar"
+        android:background="@android:color/darker_gray"
+        android:orientation="horizontal" />
 
     <LinearLayout
         android:id="@+id/category_bar"
@@ -23,35 +31,43 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:drawableTop="@android:drawable/ic_menu_gallery"
+            android:clickable="true"
+            android:drawableTop="@drawable/ic_home"
             android:text="@string/device"
-            android:textAlignment="center" />
+            android:textAlignment="center"
+            android:focusable="true" />
 
         <TextView
             android:id="@+id/category_control"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:drawableTop="@android:drawable/ic_menu_gallery"
+            android:clickable="true"
+            android:drawableTop="@drawable/ic_control"
             android:text="@string/control"
-            android:textAlignment="center" />
+            android:textAlignment="center"
+            android:focusable="true" />
 
         <TextView
             android:id="@+id/category_shop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:drawableTop="@android:drawable/ic_menu_gallery"
+            android:clickable="true"
+            android:drawableTop="@drawable/ic_shop"
             android:text="@string/shop"
-            android:textAlignment="center" />
+            android:textAlignment="center"
+            android:focusable="true" />
 
         <TextView
             android:id="@+id/category_my"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:drawableTop="@android:drawable/ic_menu_myplaces"
+            android:clickable="true"
+            android:drawableTop="@drawable/ic_my"
             android:text="@string/my"
-            android:textAlignment="center" />
+            android:textAlignment="center"
+            android:focusable="true" />
     </LinearLayout>
 </RelativeLayout>

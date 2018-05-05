@@ -63,6 +63,7 @@ public class Encryption{
         }
     }
 
+    @SuppressWarnings("SpellCheckingInspection")
     private static final String ivStr = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final SecureRandom ivGen = new SecureRandom();
     public static String newIv(){

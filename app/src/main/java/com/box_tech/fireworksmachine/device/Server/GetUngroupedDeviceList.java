@@ -12,10 +12,11 @@ import com.box_tech.fireworksmachine.utils.GeneralRequest;
 
 public class GetUngroupedDeviceList {
     public static class Request extends GeneralRequest<Result>{
-        public Request(long member_id, Activity activity, GetUngroupedDeviceList.OnFinished callback){
+        public Request(long member_id, String token, Activity activity, GetUngroupedDeviceList.OnFinished callback){
             super(activity, callback);
             setUrl(Settings.SERVER_URL + "goAddDeviceToGroup");
             addField("member_id", member_id);
+            addField("token", token);
         }
     }
 

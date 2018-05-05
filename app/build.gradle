@@ -20,6 +20,7 @@ android {
 
     android.applicationVariants.all {
         variant ->
+            //noinspection SpellCheckingInspection
             variant.outputs.all {
                 def built_type = variant.getBuildType().getName()
                 //def releaseTime = new Date().format("yyyyMMddhh", TimeZone.getTimeZone("GMT+8"))
@@ -34,11 +35,11 @@ android {
     }
 }
 
-static def getGitVersion(){
+static def getGitVersion() {
     return 'git describe --tags --abbrev=4'.execute().text.trim()
 }
 
-static def getGitVersionCode(){
+static def getGitVersionCode() {
     return Integer.parseInt('git rev-list HEAD --count'.execute().text.trim())
 }
 

@@ -15,11 +15,12 @@ public class AddDevice {
     public interface OnFinished extends GeneralRequest.OnFinished<GeneralResult> {}
 
     public static class Request  extends GeneralRequest<GeneralResult>{
-        public Request(long member_id, long device_id, Activity activity, AddDevice.OnFinished callback){
+        public Request(long member_id, String token, long device_id, Activity activity, AddDevice.OnFinished callback){
             super(activity, callback);
             setUrl(Settings.SERVER_URL + "add_device");
             addField("member_id", member_id);
             addField("device_id", device_id);
+            addField("token", token);
         }
     }
 }

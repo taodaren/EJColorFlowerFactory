@@ -62,7 +62,8 @@ public class EditDeviceTodGroupActivity extends AppCompatActivity {
     };
 
     private void getData(){
-        mGoEditDeviceToGroupRequest = new GoEditDeviceToGroup.Request(member_id, group_id, this, new GoEditDeviceToGroup.OnFinished(){
+        //TODO: token need
+        mGoEditDeviceToGroupRequest = new GoEditDeviceToGroup.Request(member_id, "", group_id, this, new GoEditDeviceToGroup.OnFinished(){
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GoEditDeviceToGroup.Result result) {
                 mGoEditDeviceToGroupRequest = null;
@@ -97,7 +98,8 @@ public class EditDeviceTodGroupActivity extends AppCompatActivity {
     }
 
     private void addDeviceToGroup(long device_id){
-        new AddDeviceToGroup.Request(member_id, device_id, group_id, this, new AddDeviceToGroup.OnFinished(){
+        //TODO: token need
+        new AddDeviceToGroup.Request(member_id, "", device_id, group_id, this, new AddDeviceToGroup.OnFinished(){
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GeneralResult result) {
 
@@ -112,7 +114,8 @@ public class EditDeviceTodGroupActivity extends AppCompatActivity {
 
 
     private void removeDeviceFromGroup(long device_id){
-        new RemoveDevice.Request(member_id, device_id, this, new RemoveDevice.OnFinished(){
+        //TODO: token need
+        new RemoveDevice.Request(member_id, "", device_id, this, new RemoveDevice.OnFinished(){
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GeneralResult result) {
 

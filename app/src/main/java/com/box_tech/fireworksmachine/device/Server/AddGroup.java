@@ -17,10 +17,11 @@ public class AddGroup {
     public interface OnFinished extends GeneralRequest.OnFinished<GeneralResult> {}
 
     public static class Request extends GeneralRequest<GeneralResult> {
-        public Request(long member_id, @Nullable String group_name, Activity activity, AddGroup.OnFinished callback){
+        public Request(long member_id, String token, @Nullable String group_name, Activity activity, AddGroup.OnFinished callback){
             super(activity, callback);
             setUrl(Settings.SERVER_URL + "add_group");
             addField("member_id", member_id);
+            addField("token", token);
             if( group_name != null && !TextUtils.isEmpty(group_name)){
                 addField("group_name", group_name);
             }

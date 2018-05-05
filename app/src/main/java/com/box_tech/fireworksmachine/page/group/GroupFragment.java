@@ -151,7 +151,8 @@ public class GroupFragment extends Fragment {
         if(isBusy()){
             return;
         }
-        mGetGroupListRequest = new GetGroupList.Request(mListener.getMemberID(), mActivity, new GetGroupList.OnFinished() {
+        //TODO: need token
+        mGetGroupListRequest = new GetGroupList.Request(mListener.getMemberID(), "", mActivity, new GetGroupList.OnFinished() {
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GetGroupList.Result result) {
                 switch (result.getCode()){
@@ -196,7 +197,8 @@ public class GroupFragment extends Fragment {
     }
 
     private void addGroup(String name){
-        mAddGroupRequest = new AddGroup.Request(mListener.getMemberID(), name, mActivity, new AddGroup.OnFinished(){
+        //TODO: need token
+        mAddGroupRequest = new AddGroup.Request(mListener.getMemberID(), "", name, mActivity, new AddGroup.OnFinished(){
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GeneralResult result) {
                 mAddGroupRequest = null;
@@ -224,7 +226,8 @@ public class GroupFragment extends Fragment {
     }
 
     private void removeGroup(long group_id){
-        mRemoveGroupRequest = new RemoveGroup.Request(mListener.getMemberID(), group_id, mActivity, new RemoveGroup.OnFinished(){
+        //TODO: need token
+        mRemoveGroupRequest = new RemoveGroup.Request(mListener.getMemberID(), "", group_id, mActivity, new RemoveGroup.OnFinished(){
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GeneralResult result) {
                 mRemoveGroupRequest = null;

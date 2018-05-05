@@ -15,10 +15,11 @@ public class AddDeviceToGroup {
     public interface OnFinished extends GeneralRequest.OnFinished<GeneralResult> {}
 
     public static class Request extends GeneralRequest<GeneralResult> {
-        public Request(long member_id, long device_id, long group_id, Activity activity, AddDeviceToGroup.OnFinished callback){
+        public Request(long member_id, String token, long device_id, long group_id, Activity activity, AddDeviceToGroup.OnFinished callback){
             super(activity, callback);
             setUrl(Settings.SERVER_URL + "addDeviceToGroup");
             addField("member_id", member_id);
+            addField("token", token);
             addField("device_id", device_id);
             addField("group_id", group_id);
         }

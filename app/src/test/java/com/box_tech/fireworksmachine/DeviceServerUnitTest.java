@@ -23,6 +23,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
 
+
 /**
  * Created by scc on 2018/3/15.
  * 测试设备管理服务器接口
@@ -30,18 +31,24 @@ import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
 public class DeviceServerUnitTest {
-    private long login(){
+    private long mMemberID = 0;
+    private String mToken;
+
+    private void login() throws Exception{
         String phoneNumber ="13810932887";
         String password ="1234";
 
         final Thread testThread = Thread.currentThread();
         final long[] ret = new long[1];
+        final String[] token = new String[1];
+
         new Login.Request(phoneNumber, password, null, new GeneralRequest.OnFinished<Login.Result>(){
             @Override
             public void onOK(@Nullable Activity activity, @NonNull Login.Result result) {
                 if(result.getCode()== GeneralResult.RESULT_OK){
                     System.out.println("login OK "+result.getData().getToken()+" member_id "+result.getData().getMember_id());
                     ret[0] = result.getData().getMember_id();
+                    token[0] = result.getData().getToken();
                 }
                 else{
                     System.out.println("login Failed "+result.getMessage());
@@ -61,16 +68,19 @@ public class DeviceServerUnitTest {
         }catch (InterruptedException e){
             System.out.println("test end" );
         }
-        return ret[0];
+
+        if(ret[0]==0){
+            throw new Exception("登入失败");
+        }
+
+        mMemberID = ret[0];
+        mToken = token[0];
     }
 
     @Test
-    public void get_device_list_test()throws Exception{
-        long member_id = login();
-        if(member_id<=0){
-            return;
-        }
-        new GetDeviceList.Request(member_id, null, new GetDeviceList.OnFinished() {
+    public void get_device_list_test() throws Exception{
+        login();
+        new GetDeviceList.Request(mMemberID,  mToken,null, new GetDeviceList.OnFinished() {
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GetDeviceList.Result result) {
                 System.out.println("get device list "+result.getMessage());
@@ -92,11 +102,8 @@ public class DeviceServerUnitTest {
 
     @Test
     public void add_device_test()throws Exception{
-        long member_id = login();
-        if(member_id<=0){
-            return;
-        }
-        new AddDevice.Request(member_id, 810252, null, new AddDevice.OnFinished() {
+        login();
+        new AddDevice.Request(mMemberID,  mToken, 810303, null, new AddDevice.OnFinished() {
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GeneralResult result) {
                 System.out.println("add device "+result.getMessage());
@@ -118,11 +125,8 @@ public class DeviceServerUnitTest {
 
     @Test
     public void remove_device_test()throws Exception{
-        long member_id = login();
-        if(member_id<=0){
-            return;
-        }
-        new RemoveDevice.Request(member_id, 810252, null, new RemoveDevice.OnFinished() {
+        login();
+        new RemoveDevice.Request(mMemberID,  mToken, 810303, null, new RemoveDevice.OnFinished() {
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GeneralResult result) {
                 System.out.println("add device "+result.getMessage());
@@ -144,11 +148,8 @@ public class DeviceServerUnitTest {
 
     @Test
     public void add_group_test()throws Exception{
-        long member_id = login();
-        if(member_id<=0){
-            return;
-        }
-        new AddGroup.Request(member_id, "g1", null, new AddGroup.OnFinished() {
+        login();
+        new AddGroup.Request(mMemberID,  mToken, "g1", null, new AddGroup.OnFinished() {
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GeneralResult result) {
                 System.out.println("add group "+result.getMessage());
@@ -170,10 +171,7 @@ public class DeviceServerUnitTest {
 
     @Test
     public void rename_group_test()throws Exception{
-        long member_id = login();
-        if(member_id<=0){
-            return;
-        }
+        login();
         new RenameGroup.Request(66, "g2", null, new RenameGroup.OnFinished() {
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GeneralResult result) {
@@ -195,11 +193,8 @@ public class DeviceServerUnitTest {
 
     @Test
     public void remove_group_test()throws Exception{
-        long member_id = login();
-        if(member_id<=0){
-            return;
-        }
-        new RemoveGroup.Request(member_id, 56, null, new RemoveGroup.OnFinished() {
+        login();
+        new RemoveGroup.Request(mMemberID,  mToken, 56, null, new RemoveGroup.OnFinished() {
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GeneralResult result) {
                 System.out.println("add device "+result.getMessage());
@@ -221,11 +216,8 @@ public class DeviceServerUnitTest {
 
     @Test
     public void get_group_list_test()throws Exception{
-        long member_id = login();
-        if(member_id<=0){
-            return;
-        }
-        new GetGroupList.Request(member_id, null, new GetGroupList.OnFinished() {
+        login();
+        new GetGroupList.Request(mMemberID,  mToken, null, new GetGroupList.OnFinished() {
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GetGroupList.Result result) {
                 System.out.println("get group list "+result.getMessage());
@@ -247,11 +239,8 @@ public class DeviceServerUnitTest {
 
     @Test
     public void get_ungrouped_device_list_test()throws Exception{
-        long member_id = login();
-        if(member_id<=0){
-            return;
-        }
-        new GetUngroupedDeviceList.Request(member_id, null, new GetUngroupedDeviceList.OnFinished() {
+        login();
+        new GetUngroupedDeviceList.Request(mMemberID,  mToken, null, new GetUngroupedDeviceList.OnFinished() {
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GetUngroupedDeviceList.Result result) {
                 System.out.println("get group list "+result.getMessage());
@@ -273,12 +262,8 @@ public class DeviceServerUnitTest {
 
     @Test
     public void add_device_to_group_test()throws Exception{
-        long member_id = login();
-        if(member_id<=0){
-            return;
-        }
-
-        new AddDeviceToGroup.Request(member_id, 810252, 3, null, new AddDeviceToGroup.OnFinished() {
+        login();
+        new AddDeviceToGroup.Request(mMemberID,  mToken, 810252, 3, null, new AddDeviceToGroup.OnFinished() {
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GeneralResult result) {
                 System.out.println("add group "+result.getMessage());
@@ -301,12 +286,8 @@ public class DeviceServerUnitTest {
 
     @Test
     public void go_edit_device_to_group_test()throws Exception{
-        long member_id = login();
-        if(member_id<=0){
-            return;
-        }
-
-        new GoEditDeviceToGroup.Request(member_id,  3, null, new GoEditDeviceToGroup.OnFinished() {
+        login();
+        new GoEditDeviceToGroup.Request(mMemberID,  mToken,  3, null, new GoEditDeviceToGroup.OnFinished() {
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GoEditDeviceToGroup.Result result) {
                 System.out.println("add group "+result.getMessage());
