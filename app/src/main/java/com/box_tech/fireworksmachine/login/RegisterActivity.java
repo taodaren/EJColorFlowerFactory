@@ -16,8 +16,6 @@ import android.widget.Toast;
 
 import com.box_tech.fireworksmachine.R;
 import com.box_tech.fireworksmachine.Settings;
-import com.box_tech.fireworksmachine.login.PrepareGetVerifyCodeRequest;
-import com.box_tech.fireworksmachine.login.PrepareRequest;
 import com.box_tech.fireworksmachine.login.Server.Register;
 import com.box_tech.fireworksmachine.utils.GeneralRequest;
 import com.box_tech.fireworksmachine.utils.GeneralResult;
@@ -120,7 +118,9 @@ public class RegisterActivity extends AppCompatActivity {
         showProgress(false);
         switch (result.getCode()){
             case Register.ResultCode.OK:
-                Settings.storeLoginInfo(this, maPhoneNumberView.getText().toString(), mPasswordView.getText().toString());
+                Settings.storeSessionInfo(this, new LoginSession(
+                        maPhoneNumberView.getText().toString(),
+                        mPasswordView.getText().toString()));
                 SuccessPageActivity.start_me(this, R.string.register_success, LoginActivity.class);
                 finish();
                 break;

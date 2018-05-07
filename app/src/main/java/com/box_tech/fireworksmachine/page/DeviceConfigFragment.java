@@ -1,17 +1,23 @@
 package com.box_tech.fireworksmachine.page;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ExpandableListView;
+import android.widget.Toast;
 
 import com.box_tech.fireworksmachine.R;
+import com.box_tech.fireworksmachine.Settings;
 import com.box_tech.fireworksmachine.device.DeviceListAdapter;
+import com.box_tech.fireworksmachine.device.Server.GetDeviceList;
+import com.box_tech.fireworksmachine.login.LoginSession;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -48,11 +54,13 @@ public class DeviceConfigFragment extends Fragment {
             @Override
             public void onRefresh() {
                 mListener.scanDevice();
+                getDeviceListFromServer();
                 srl.setRefreshing(false);
             }
         });
         ExpandableListView lv = root.findViewById(R.id.lv_devices);
         lv.setAdapter(mListener.getDeviceListAdapter());
+        getDeviceListFromServer();
         return root;
     }
 
@@ -73,18 +81,36 @@ public class DeviceConfigFragment extends Fragment {
         mListener = null;
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
+    private void getDeviceListFromServer(){
+        Activity activity = getActivity();
+        if(activity==null){
+            return;
+        }
+        LoginSession session = Settings.getLoginSessionInfo(activity);
+        new GetDeviceList.Request(session.getMember_id(),  session.getToken(),activity, new GetDeviceList.OnFinished() {
+            @Override
+            public void onOK(@Nullable Activity activity, @NonNull GetDeviceList.Result result) {
+                if(activity!=null){
+                    onGetDeviceListFromServer(result.getData().getList());
+                }
+            }
+
+            @Override
+            public void onFailed(@Nullable Activity activity, @NonNull String message) {
+                if(activity!=null){
+                    Toast.makeText(activity, "从服务器获取设备列表失败："+message, Toast.LENGTH_SHORT).show();
+                }
+            }
+        }).run();
+    }
+
+    private void onGetDeviceListFromServer(GetDeviceList.Result.DeviceInformation[] list){
+        mListener.set_registered_device(list);
+    }
+
     public interface OnFragmentInteractionListener {
         void scanDevice();
         DeviceListAdapter getDeviceListAdapter();
+        void set_registered_device(GetDeviceList.Result.DeviceInformation[] list);
     }
 }

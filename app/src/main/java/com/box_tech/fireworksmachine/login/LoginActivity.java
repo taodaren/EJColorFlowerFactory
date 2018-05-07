@@ -37,8 +37,9 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        String username = Settings.get_username(this);
-        String password = Settings.get_password(this);
+        LoginSession session = Settings.getLoginSessionInfo(this);
+        String username = session.getUsername();
+        String password = session.getPassword();
 
         // Set up the login form.
         maPhoneNumberView = findViewById(R.id.et_phone_number);
@@ -107,8 +108,12 @@ public class LoginActivity extends AppCompatActivity {
         switch (result.getCode()){
             case Login.ResultCode.OK:
                 Log.i("LoginActivity", "login success "+result.getData().getToken()+" "+result.getData().getMember_id());
-                Settings.storeLoginInfo(this, maPhoneNumberView.getText().toString(), mPasswordView.getText().toString());
-                Settings.storeMemberID(this, result.getData().getMember_id());
+                Settings.storeSessionInfo(this, new LoginSession(
+                        maPhoneNumberView.getText().toString(),
+                        mPasswordView.getText().toString(),
+                        result.getData().getMember_id(),
+                        result.getData().getToken()
+                ));
                 SuccessPageActivity.start_me(this, R.string.login_success, MainActivity.class);
                 finish();
                 break;

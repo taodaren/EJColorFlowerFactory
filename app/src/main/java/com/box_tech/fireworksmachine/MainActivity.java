@@ -26,6 +26,8 @@ import com.box_tech.fireworksmachine.device.DeviceState;
 import com.box_tech.fireworksmachine.device.ISendCommand;
 import com.box_tech.fireworksmachine.device.OnReceivePackage;
 import com.box_tech.fireworksmachine.device.Protocol;
+import com.box_tech.fireworksmachine.device.Server.GetDeviceList;
+import com.box_tech.fireworksmachine.login.LoginSession;
 import com.box_tech.fireworksmachine.page.DeviceConfigFragment;
 import com.box_tech.fireworksmachine.page.PageAdapter;
 import com.box_tech.fireworksmachine.page.group.GroupFragment;
@@ -41,7 +43,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         GroupFragment.OnFragmentInteractionListener{
     private final static String TAG = "MainActivity";
     private final List<Device> mDeviceList = new LinkedList<>();
-    private final Map<String, Protocol> mProtocolList = new ArrayMap<>();
+    private final Map<String, ProtocolWithDevice> mProtocolList = new ArrayMap<>();
 
     private final static int ACK_TIMEOUT = 1000;
     @SuppressWarnings("SpellCheckingInspection")
@@ -67,7 +69,8 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         mDeviceListAdapter = new DeviceListAdapter(this, mDeviceList );
         mDeviceListAdapter.setSendCommand(this);
 
-        mMemberID = Settings.get_member_id(this);
+        LoginSession session = Settings.getLoginSessionInfo(this);
+        mMemberID = session.getMember_id();
 
         addScanFilter(UUID_GATT_SERVICE);
 
@@ -79,6 +82,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
 
         showDeviceAddressSelectDialog();
     }
+
 
     private final int[] category_id = new int[]{
             R.id.category_device,
@@ -127,7 +131,6 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
 
     @Override
     public void turnDeviceList(long[] device_id, boolean onoff) {
-
     }
 
     @Override
@@ -170,7 +173,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
                         for(int i = 0; i< mFoundDeviceAddressList.size(); i++){
                             if(selected_array.get(i)){
                                 Log.i(TAG, "select "+mFoundDeviceAddressList.get(i));
-                                add_device(mFoundDeviceAddressList.get(i));
+                                add_device(mFoundDeviceAddressList.get(i), 0);
                             }
                             else{
                                 Log.i(TAG, "not select "+mFoundDeviceAddressList.get(i));
@@ -198,46 +201,84 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         }
     }
 
-    private void add_device(final String mac){
+    private class ProtocolWithDevice extends Protocol{
+        final Device device;
+        ProtocolWithDevice(@NonNull Device device){
+            this.device = device;
+        }
+
+        @Override
+        protected void onReceivePackage(@NonNull DeviceState state) {
+            device.setState(state);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mDeviceListAdapter.notifyDataSetChanged();
+                }
+            });
+        }
+
+        @Override
+        protected void onReceivePackage(@NonNull DeviceConfig config){
+            device.setConfig(config);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mDeviceListAdapter.notifyDataSetChanged();
+                }
+            });
+        }
+
+        @Override
+        protected void onReceivePackage( @NonNull final byte[] pkg, int pkg_len) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    doMatch(device.getAddress(), pkg);
+                }
+            });
+        }
+    }
+
+    private static boolean contain(GetDeviceList.Result.DeviceInformation[] list, String mac){
+        for(GetDeviceList.Result.DeviceInformation d : list){
+            if(d.getMac().equals(mac)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void set_registered_device(GetDeviceList.Result.DeviceInformation[] list) {
+        List<String> rm = new LinkedList<>();
+        List<Device> rmd = new LinkedList<>();
+        for(String mac : mProtocolList.keySet()){
+            if(!contain(list, mac)){
+                rm.add(mac);
+                rmd.add(getDevice(mac));
+            }
+        }
+        for(String mac : rm){
+            mProtocolList.remove(mac);
+        }
+        for(Device d : rmd){
+            mDeviceList.remove(d);
+        }
+
+        for(GetDeviceList.Result.DeviceInformation d : list){
+            add_device(d.getMac(), d.getId());
+        }
+    }
+
+    private void add_device(final String mac, long id){
         if( !mProtocolList.containsKey(mac) ){
             final Device d = new Device(mac);
+            d.setId(id);
             mDeviceList.add(d);
             mDeviceListAdapter.notifyDataSetChanged();
             addDevice(mac);
-
-            mProtocolList.put(mac, new Protocol(){
-                @Override
-                protected void onReceivePackage(@NonNull DeviceState state) {
-                    d.setState(state);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mDeviceListAdapter.notifyDataSetChanged();
-                        }
-                    });
-                }
-
-                @Override
-                protected void onReceivePackage(@NonNull DeviceConfig config){
-                    d.setConfig(config);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mDeviceListAdapter.notifyDataSetChanged();
-                        }
-                    });
-                }
-
-                @Override
-                protected void onReceivePackage( @NonNull final byte[] pkg, int pkg_len) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            doMatch(mac, pkg);
-                        }
-                    });
-                }
-            });
+            mProtocolList.put(mac, new ProtocolWithDevice(d));
         }
     }
 

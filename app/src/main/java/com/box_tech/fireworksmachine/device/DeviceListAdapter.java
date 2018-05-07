@@ -84,7 +84,7 @@ public class DeviceListAdapter extends BaseExpandableListAdapter {
         }
 
         TextView tv = root.findViewById(R.id.tv_title_device_id);
-        tv.setText(String.format(Locale.US, "%d", (device.config ==null)?0:device.config.mID));
+        tv.setText(String.format(Locale.US, "%d", device.getId()));
         ImageView iv = root.findViewById(R.id.iv_device_connected);
         iv.setSelected(device.isConnected());
         return root;

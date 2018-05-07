@@ -9,7 +9,7 @@ import android.os.Parcelable;
  */
 
 public class DeviceConfig implements Parcelable {
-    public long mID = 4453;
+    public long mID = 0;
     public int mTemperatureThresholdLow = 500;
     public int mTemperatureThresholdHigh = 510;
     public int[] mMotorDefaultSpeed = new int[]{20,10,15,200};

@@ -12,6 +12,7 @@ public class Device {
     DeviceConfig config = null;
     DeviceState state = null;
     private final String address;
+    private long id = 0; // from server
     private boolean connected = false;
 
     public Device(@NonNull String address){
@@ -44,5 +45,13 @@ public class Device {
 
     public void setConnected(boolean connected) {
         this.connected = connected;
+    }
+
+    public long getId() {
+        return (config==null)?id : config.mID;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 }

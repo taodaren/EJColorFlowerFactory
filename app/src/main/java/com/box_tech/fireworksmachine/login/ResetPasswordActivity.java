@@ -119,7 +119,9 @@ public class ResetPasswordActivity extends AppCompatActivity {
         showProgress(false);
         switch (result.getCode()){
             case ResetPassword.ResultCode.OK:
-                Settings.storeLoginInfo(this, maPhoneNumberView.getText().toString(), mPasswordView.getText().toString());
+                Settings.storeSessionInfo(this, new LoginSession(
+                        maPhoneNumberView.getText().toString(),
+                        mPasswordView.getText().toString()));
                 SuccessPageActivity.start_me(this, R.string.reset_password_success, LoginActivity.class);
                 finish();
                 break;
