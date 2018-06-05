@@ -1,5 +1,6 @@
 package com.box_tech.fireworksmachine;
 
+import android.app.Dialog;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -37,6 +38,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import static android.app.AlertDialog.THEME_HOLO_DARK;
+import static android.app.AlertDialog.THEME_HOLO_LIGHT;
 
 public class MainActivity extends BLEManagerActivity implements ISendCommand,
         DeviceConfigFragment.OnFragmentInteractionListener,
@@ -83,6 +87,14 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         showDeviceAddressSelectDialog();
     }
 
+    @Override
+    protected void onDestroy() {
+        if(mSelectDialog!=null){
+            mSelectDialog.dismiss();
+            mSelectDialog = null;
+        }
+        super.onDestroy();
+    }
 
     private final int[] category_id = new int[]{
             R.id.category_device,
@@ -138,6 +150,8 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         return mMemberID;
     }
 
+    private Dialog mSelectDialog;
+
     private void showDeviceAddressSelectDialog(){
         final View view = View.inflate(this, R.layout.device_list_dialog, null);
         final ListView lv = view.findViewById(R.id.lv_device_list);
@@ -163,7 +177,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         lv.setAdapter(mFoundDeviceAddressListAdapter);
         mFoundDeviceProgressBar = view.findViewById(R.id.pb_refresh_progress);
 
-        new AlertDialog.Builder(MainActivity.this)
+        mSelectDialog = new AlertDialog.Builder(MainActivity.this, THEME_HOLO_DARK)
                 .setTitle("选择设备")
                 .setView(view)
                 .setPositiveButton("确定", new DialogInterface.OnClickListener() {
@@ -190,7 +204,8 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
                         mFoundDeviceProgressBar = null;
                     }
                 })
-                .show();
+                .create();
+        mSelectDialog.show();
     }
 
     @Override
@@ -319,21 +334,40 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
                 mDeviceListAdapter.notifyDataSetChanged();
             }
 
-            registerPeriod(mac + "-status", new Runnable() {
-                        @Override
-                        public void run() {
-                            Device device = getDevice(mac);
-                            if(device!=null){
-                                DeviceConfig config = device.getConfig();
-                                long id = (config==null)?0:config.mID;
-                                if(config==null || mRequestConfig){
-                                    mRequestConfig = ! send(mac, Protocol.get_config_package(id));
-                                }
-                                send(mac, Protocol.get_status_package(id));
+            registerRefreshStatus(mac);
+        }
+    }
+
+    private void registerRefreshStatus(final String mac){
+        registerPeriod(mac + "-status", new Runnable() {
+                    @Override
+                    public void run() {
+                        Device device = getDevice(mac);
+                        if(device!=null){
+                            DeviceConfig config = device.getConfig();
+                            long id = (config==null)?0:config.mID;
+                            if(config==null || mRequestConfig){
+                                mRequestConfig = ! send(mac, Protocol.get_config_package(id));
                             }
+                            send(mac, Protocol.get_status_package(id));
                         }
-                    },
-                    2000);
+                    }
+                },
+                2000);
+    }
+
+    @Override
+    protected void onDeviceConnect(String mac){
+        Log.i(TAG, "onDeviceConnect "+mac);
+        registerRefreshStatus(mac);
+
+        Device device = getDevice(mac);
+        if(device!=null){
+            device.setConnected(true);
+            mDeviceListAdapter.notifyDataSetChanged();
+        }
+        else{
+            Log.i(TAG, "onDeviceConnect no device");
         }
     }
 

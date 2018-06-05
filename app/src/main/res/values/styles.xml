@@ -11,7 +11,7 @@
 
     <style name="ButtonStyle" parent="@android:style/Widget.Button">
         <item name="android:background">@drawable/ic_button</item>
-        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textColor">@android:color/black</item>
     </style>
 
 </resources>

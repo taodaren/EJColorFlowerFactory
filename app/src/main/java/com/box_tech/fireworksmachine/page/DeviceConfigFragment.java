@@ -18,6 +18,7 @@ import com.box_tech.fireworksmachine.Settings;
 import com.box_tech.fireworksmachine.device.DeviceListAdapter;
 import com.box_tech.fireworksmachine.device.Server.GetDeviceList;
 import com.box_tech.fireworksmachine.login.LoginSession;
+import com.box_tech.fireworksmachine.utils.GeneralResult;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -91,7 +92,10 @@ public class DeviceConfigFragment extends Fragment {
             @Override
             public void onOK(@Nullable Activity activity, @NonNull GetDeviceList.Result result) {
                 if(activity!=null){
-                    onGetDeviceListFromServer(result.getData().getList());
+                    GetDeviceList.Result.List data = result.getData();
+                    if(data!=null){
+                        onGetDeviceListFromServer(result.getData().getList());
+                    }
                 }
             }
 

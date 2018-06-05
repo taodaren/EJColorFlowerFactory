@@ -109,19 +109,43 @@ public class BLEManagerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
 
+        MyLifecycleHandler.addListener(mOnForegroundStateChangeListener);
+
         mHandler = new Handler();
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = (bluetoothManager==null)?null:bluetoothManager.getAdapter();
-        mHandler.post(mPoll);
+        //mHandler.post(mPoll);
     }
+
+    private final MyLifecycleHandler.OnForegroundStateChangeListener mOnForegroundStateChangeListener =
+            new MyLifecycleHandler.OnForegroundStateChangeListener() {
+                @Override
+                public void onStateChanged(boolean foreground) {
+                    Log.i(TAG, "OnForegroundStateChangeListener "+foreground);
+                    if(foreground){
+                        for(Pair<Runnable, Integer> s : mPeriodRunnable.values()){
+                            mHandler.postDelayed(s.first, s.second);
+                        }
+                        mHandler.post(mPoll);
+                    }
+                    else{
+                        mHandler.removeCallbacks(mPoll);
+                        for(Pair<Runnable, Integer> s : mPeriodRunnable.values()){
+                            mHandler.removeCallbacks(s.first);
+                        }
+                    }
+                }
+            };
 
     @Override
     protected void onPause(){
         super.onPause();
+        /*
         mHandler.removeCallbacks(mPoll);
         for(Pair<Runnable, Integer> s : mPeriodRunnable.values()){
             mHandler.removeCallbacks(s.first);
         }
+        */
         Log.i(TAG, "onPause");
     }
 
@@ -129,10 +153,12 @@ public class BLEManagerActivity extends AppCompatActivity {
     protected void onResume(){
         super.onResume();
         Log.i(TAG, "onResume");
+        /*
         for(Pair<Runnable, Integer> s : mPeriodRunnable.values()){
             mHandler.postDelayed(s.first, s.second);
         }
         mHandler.post(mPoll);
+        */
     }
 
     private final Runnable mPoll = new Runnable() {
@@ -509,6 +535,12 @@ public class BLEManagerActivity extends AppCompatActivity {
                 if(newState == BluetoothProfile.STATE_CONNECTED){
                     Log.i(TAG, "connected "+mgr.mac);
                     mgr.connected = true;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            onDeviceConnect(mgr.mac);
+                        }
+                    });
                 }
                 else if(newState == BluetoothProfile.STATE_DISCONNECTED){
                     Log.i(TAG, "disconnected "+mgr.mac);
@@ -596,6 +628,10 @@ public class BLEManagerActivity extends AppCompatActivity {
     void onDeviceReady(String mac){
     }
 
+    void onDeviceConnect(String mac){
+
+    }
+
     void onDeviceDisconnect(String mac){
 
     }
@@ -645,6 +681,8 @@ public class BLEManagerActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy(){
+        MyLifecycleHandler.removeListener(mOnForegroundStateChangeListener);
+
         for(Pair<Runnable, Integer> s : mPeriodRunnable.values()){
             mHandler.removeCallbacks(s.first);
         }
