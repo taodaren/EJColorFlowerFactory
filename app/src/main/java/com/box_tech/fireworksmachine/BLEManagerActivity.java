@@ -546,6 +546,7 @@ public class BLEManagerActivity extends AppCompatActivity {
                     Log.i(TAG, "disconnected "+mgr.mac);
                     mgr.connected = false;
                     mgr.discovering = false;
+                    mgr.characteristic = null;
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
