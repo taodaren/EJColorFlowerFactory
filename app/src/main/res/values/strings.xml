@@ -3,6 +3,7 @@
     <string name="temperature">温度</string>
     <string name="motor_1_speed">进料电机速度</string>
     <string name="dc_supply_voltage">直流供电电压</string>
+    <string name="internal_temperature">内部温度</string>
     <string name="motor_2_speed">刮料电机速度</string>
     <string name="motor_3_speed">吹风电机速度</string>
     <string name="motor_4_speed">备用电机速度</string>

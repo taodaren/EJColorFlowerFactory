@@ -55,13 +55,13 @@ public class DeviceConfigFragment extends Fragment {
             @Override
             public void onRefresh() {
                 mListener.scanDevice();
-                getDeviceListFromServer();
+                //getDeviceListFromServer();
                 srl.setRefreshing(false);
             }
         });
         ExpandableListView lv = root.findViewById(R.id.lv_devices);
         lv.setAdapter(mListener.getDeviceListAdapter());
-        getDeviceListFromServer();
+        //getDeviceListFromServer();
         return root;
     }
 

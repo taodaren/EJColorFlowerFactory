@@ -103,14 +103,14 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
         }
 
         if(mDevice == null || mDevice.state ==null){
-            ((TextView)root.findViewById(R.id.tv_supply_voltage)).setText("??.?");
+            ((TextView)root.findViewById(R.id.tv_supply_voltage)).setText("??");
             ((TextView)root.findViewById(R.id.tv_pitch)).setText("??");
             ((TextView)root.findViewById(R.id.tv_ultrasonic_distance)).setText("?.?");
             ((TextView)root.findViewById(R.id.tv_infrared_distance)).setText("?.?");
             ((TextView)root.findViewById(R.id.tv_rest_time)).setText("??");
         }
         else{
-            ((TextView)root.findViewById(R.id.tv_supply_voltage)).setText(String.format(Locale.US,"%.1f", mDevice.state.mSupplyVoltage));
+            ((TextView)root.findViewById(R.id.tv_supply_voltage)).setText(String.format(Locale.US,"%.0f", mDevice.state.mSupplyVoltage*10));
             ((TextView)root.findViewById(R.id.tv_pitch)).setText(String.format(Locale.US,"%d", mDevice.state.mPitch));
             ((TextView)root.findViewById(R.id.tv_ultrasonic_distance)).setText(String.format(Locale.US,"%.1f", mDevice.state.mUltrasonicDistance/10.0));
             ((TextView)root.findViewById(R.id.tv_infrared_distance)).setText(String.format(Locale.US,"%.1f", mDevice.state.mInfraredDistance/10.0));

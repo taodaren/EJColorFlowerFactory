@@ -61,7 +61,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="start"
-            android:text="@string/dc_supply_voltage"
+            android:text="@string/internal_temperature"
             android:textSize="@dimen/value_text_size" />
 
         <LinearLayout
@@ -81,7 +81,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text=" V"
+                android:text=" ℃"
                 android:textSize="@dimen/value_text_size"
                 tools:ignore="HardcodedText" />
         </LinearLayout>
