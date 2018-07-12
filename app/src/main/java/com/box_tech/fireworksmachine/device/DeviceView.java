@@ -2,12 +2,14 @@ package com.box_tech.fireworksmachine.device;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.util.ArrayMap;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import cn.box_tech.zhihuiyuan.zxing.activity.CaptureActivity;
 import cn.carbswang.android.numberpickerview.library.NumberPickerView;
 
 /**
@@ -160,7 +163,7 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
         });
     }
 
-    private void onClickSetupView(int id, View editView){
+    private void onClickSetupView(int id, final View editView){
         switch (id){
             case R.id.bt_edit_temperature_threshold:
                 WheelView etLow = editView.findViewById(R.id.et_temperature_threshold_low);
@@ -206,7 +209,7 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
                 etDMX.selectIndex(addresses.indexOf(String.valueOf(mDevice.getConfig().mDMXAddress)));
                 break;
             case R.id.bt_edit_device_id:
-                NumberPickerView[] etID = new NumberPickerView[]{
+                final NumberPickerView[] etID = new NumberPickerView[]{
                     editView.findViewById(R.id.et_id_number_1),
                     editView.findViewById(R.id.et_id_number_2),
                     editView.findViewById(R.id.et_id_number_3),
@@ -214,6 +217,16 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
                     editView.findViewById(R.id.et_id_number_5),
                         editView.findViewById(R.id.et_id_number_6),
                 };
+
+                ImageButton btScanID = editView.findViewById(R.id.bt_scan_id);
+                btScanID.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        CaptureActivity.viewToFill = etID;
+                        Intent intent = new Intent(editView.getContext(), CaptureActivity.class);
+                        editView.getContext().startActivity(intent);
+                    }
+                });
 
                 final String[] numbers = new String[10];
                 for(int i=0;i<10;i++){

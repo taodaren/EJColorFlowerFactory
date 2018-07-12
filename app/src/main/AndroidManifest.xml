@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <uses-feature android:name="android.hardware.bluetooth" />
 
@@ -20,7 +22,8 @@
         android:theme="@style/AppTheme"
         android:name=".MyApplication"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".MainActivity" />
+        <activity android:name=".MainActivity"
+            android:screenOrientation="portrait"/>
         <activity android:name=".BLEManagerActivity" />
         <activity android:name=".login.LoginActivity">
             <intent-filter>
@@ -37,6 +40,7 @@
             android:label="@string/title_activity_reset_password" />
         <activity android:name=".utils.SuccessPageActivity" />
         <activity android:name=".EditDeviceTodGroupActivity" />
+        <activity android:name="cn.box_tech.zhihuiyuan.zxing.activity.CaptureActivity"/>
     </application>
 
 </manifest>

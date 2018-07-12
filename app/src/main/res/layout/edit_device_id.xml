@@ -79,4 +79,13 @@
         app:npv_TextSizeNormal="16sp"
         app:npv_TextSizeSelected="20sp"
         app:npv_WrapSelectorWheel="true" />
+
+    <ImageButton
+        android:id="@+id/bt_scan_id"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_weight="1"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:srcCompat="@drawable/barcode_id" />
 </LinearLayout>

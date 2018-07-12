@@ -7,6 +7,7 @@ import android.support.annotation.Nullable;
 import com.box_tech.fireworksmachine.device.Server.AddDevice;
 import com.box_tech.fireworksmachine.device.Server.AddDeviceToGroup;
 import com.box_tech.fireworksmachine.device.Server.AddGroup;
+import com.box_tech.fireworksmachine.device.Server.BindDevice;
 import com.box_tech.fireworksmachine.device.Server.GetDeviceList;
 import com.box_tech.fireworksmachine.device.Server.GetGroupList;
 import com.box_tech.fireworksmachine.device.Server.GetUngroupedDeviceList;
@@ -296,6 +297,30 @@ public class DeviceServerUnitTest {
             @Override
             public void onFailed(@Nullable Activity activity, @NonNull String message) {
                 System.out.println("add group "+message);
+            }
+        }).run();
+
+        try{
+            Thread.sleep(1000);
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }
+    }
+
+
+    @Test
+    public void bind_device_test()throws Exception{
+        login();
+        String mac = "00:00:00:00:00:01";
+        new BindDevice.Request(mac,  mToken, null, new AddDevice.OnFinished() {
+            @Override
+            public void onOK(@Nullable Activity activity, @NonNull GeneralResult result) {
+                System.out.println("add device "+result.getMessage());
+            }
+
+            @Override
+            public void onFailed(@Nullable Activity activity, @NonNull String message) {
+                System.out.println("add device "+message);
             }
         }).run();
 

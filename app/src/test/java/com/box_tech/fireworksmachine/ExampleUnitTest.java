@@ -14,6 +14,8 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
@@ -164,5 +166,15 @@ public class ExampleUnitTest {
 
         cmd_pkg = Protocol.command_package(9, 777, null);
         assertTrue( ! Protocol.isMatch(cmd_pkg, ack_pkg));
+    }
+
+    @Test
+    public void barcodeMatch(){
+        String barcode = "http://60.205.226.109/index.php/index/api/add_device/device_id/810319";
+        Pattern pattern = Pattern.compile( "/(\\d{6})$");
+        Matcher matcher = pattern.matcher(barcode);
+        assertTrue(matcher.find());
+        String id = matcher.group(1);
+        assertEquals(id, "810319");
     }
 }
