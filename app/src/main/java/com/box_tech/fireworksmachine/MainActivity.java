@@ -34,8 +34,6 @@ import com.box_tech.fireworksmachine.page.DeviceConfigFragment;
 import com.box_tech.fireworksmachine.page.PageAdapter;
 import com.box_tech.fireworksmachine.page.group.GroupFragment;
 import com.box_tech.fireworksmachine.utils.Util;
-import com.box_tech.sun_lcd.SunLcd;
-import com.box_tech.sun_lcd.Zlib;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -74,22 +72,6 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
 
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);// 保持常亮的屏幕的状态
-
-        /*
-        try{
-            byte[] b = SunLcd.makeBinary(this, "801234");
-            byte[][] r = Zlib.createCompressedChunck(b);
-            if(r==null){
-                Log.e(TAG, "分包失败");
-            }
-            else{
-                for(byte[] z : r){
-                    Log.d(TAG, "包长度 "+z.length);
-                }
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }*/
 
         mDeviceListAdapter = new DeviceListAdapter(this, mDeviceList );
         mDeviceListAdapter.setSendCommand(this);
@@ -364,7 +346,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
                     @Override
                     public void run() {
                         ProtocolWithDevice pd = mProtocolList.get(mac);
-                        if(pd==null||pd.isLcdMode()){
+                        if(pd==null){
                             return;
                         }
                         Device device = getDevice(mac);
@@ -421,12 +403,8 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         String mac = device.getAddress();
         Protocol p = mProtocolList.get(mac);
         if(p!=null){
-            if( p.isLcdMode() == Protocol.isLcdModeCommand(pkg)){
-                send(device.getAddress(), pkg, !p.isLcdMode());
-                if( !p.isLcdMode() ){
-                    mRequestConfig = true;
-                }
-            }
+            send(device.getAddress(), pkg, true);
+            mRequestConfig = true;
         }
     }
 
