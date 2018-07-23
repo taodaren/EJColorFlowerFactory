@@ -37,7 +37,7 @@ public class DeviceServerUnitTest {
 
     private void login() throws Exception{
         String phoneNumber ="13810932887";
-        String password ="1234";
+        String password ="123456";
 
         final Thread testThread = Thread.currentThread();
         final long[] ret = new long[1];
@@ -311,11 +311,11 @@ public class DeviceServerUnitTest {
     @Test
     public void bind_device_test()throws Exception{
         login();
-        String mac = "00:00:00:00:00:01";
-        new BindDevice.Request(mac,  mToken, null, new AddDevice.OnFinished() {
+        String mac = "00:00:00:00:00:02";
+        new BindDevice.Request(mac,  mToken, null, new BindDevice.OnFinished() {
             @Override
-            public void onOK(@Nullable Activity activity, @NonNull GeneralResult result) {
-                System.out.println("add device "+result.getMessage());
+            public void onOK(@Nullable Activity activity, @NonNull BindDevice.Result result) {
+                System.out.println("add device "+result.getMessage()+", "+result.getData());
             }
 
             @Override

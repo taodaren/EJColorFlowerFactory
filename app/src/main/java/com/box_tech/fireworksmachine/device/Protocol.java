@@ -32,11 +32,15 @@ public class Protocol {
     private final static int CMD_GET_TIMESTAMP = 9;
     private final static int CMD_STOP_JET = 10;
     private final static int CMD_SET_GUALIAO_TIME = 11;
+    private final static int CMD_ENTER_LCD_MODE = 14;
 
     private final static int HEADER_LEN = 7;
     private final byte[] pkg = new byte[MAX_PKG_LEN];
     private int pkg_len = 0;
     private boolean translate = false;
+    private boolean lcd_mode = false;
+
+    public boolean isLcdMode(){return lcd_mode;}
 
     public void onReceive(byte[] data){
         for(byte b : data){
@@ -47,6 +51,10 @@ public class Protocol {
 
     // 反转义
     private void onByte(byte b){
+        if(lcd_mode){
+            onByteLevel_Lcd(b);
+            return;
+        }
         if(translate){
             translate = false;
             onByteLevel2( (byte)(((int)b & 0xff) ^ 0xFF), true );
@@ -116,6 +124,32 @@ public class Protocol {
         }
     }
 
+
+    // LCDmode
+    private void onByteLevel_Lcd(byte b){
+        if( b == (byte)0xDE ){
+            s = 1;
+            pkg_len = 1;
+            pkg[0] = b;
+        }
+        else if(s == 1){
+            pkg[pkg_len] = b;
+            pkg_len += 1;
+            if(pkg_len >= 5){
+                if( CRC16.validate(pkg, 3) ){
+                    //Log.i(TAG, "ack package   "+Util.hex(pkg, pkg_len));
+                    onReceivePackage(pkg, pkg_len);
+                    if(pkg[1] == 6){
+                        lcd_mode = false;
+                    }
+                }
+                else{
+                    Log.e(TAG, "malformed package LCD "+ Util.hex(pkg, pkg_len));
+                }
+            }
+        }
+    }
+
     private void onPackage(){
         if(pkg_len>=9 && pkg[0] == (byte)0xCD){
             int data_len = (int)pkg[1] & 0xff;
@@ -150,6 +184,12 @@ public class Protocol {
         int cmd = pkg[2] & 0x7F;
         //long id = parseID(pkg, pkg_len);
         switch (cmd){
+            case CMD_ENTER_LCD_MODE:
+                if( parse_enter_lcd_mode_ack(pkg, pkg_len) ){
+                    lcd_mode = true;
+                }
+                onReceivePackage(pkg, pkg_len);
+                break;
             case CMD_STATUS:
                 DeviceState ds = parseStatus(pkg, pkg_len);
                 if(ds != null){
@@ -179,6 +219,9 @@ public class Protocol {
     }
 
     public static boolean isMatch(@NonNull byte[] cmd_pkg, @NonNull byte[] ack_pkg){
+        if(cmd_pkg[0] == (byte)0xCE && ack_pkg[0] == (byte)0xDE ){
+            return (cmd_pkg[1] & 7) == ack_pkg[1];
+        }
         return (cmd_pkg[2] | (byte)0x80) == ack_pkg[2] &&
                 ((cmd_pkg[3]==0 && cmd_pkg[4]==0 &&cmd_pkg[5]==0 &&cmd_pkg[6]==0)||
                         (cmd_pkg[3]==ack_pkg[3] && cmd_pkg[4]==ack_pkg[4] &&
@@ -203,8 +246,12 @@ public class Protocol {
         pkg[7+data_len] = (byte)(crc & 0xff);
         pkg[8+data_len] = (byte)((crc>>8) & 0xff);
 
-        Log.i(TAG, "command_package "+Util.hex(pkg, pkg.length));
+        //Log.i(TAG, "command_package "+Util.hex(pkg, pkg.length));
         return pkg;
+    }
+
+    public static boolean isLcdModeCommand(@NonNull byte[] pkg){
+        return pkg[0] == (byte)0xCE;
     }
 
 
@@ -354,6 +401,11 @@ public class Protocol {
         return command_package(CMD_ADD_MATERIAL, id, data);
     }
 
+    @NonNull
+    public static byte[] enter_lcd_mode_package(long id){
+        return command_package(CMD_ENTER_LCD_MODE, id, null );
+    }
+
     public static long parseTimestamp(@NonNull byte[] pkg, int pkg_len){
         BinaryReader reader = new BinaryReader(new ByteArrayInputStream(pkg, 0, pkg_len));
         try{
@@ -363,6 +415,75 @@ public class Protocol {
             return -1;
         }
     }
+
+    public static boolean parse_enter_lcd_mode_ack(@NonNull byte[] pkg, int pkg_len){
+        BinaryReader reader = new BinaryReader(new ByteArrayInputStream(pkg, 0, pkg_len));
+        int result;
+        try{
+            reader.skip(HEADER_LEN);
+            result = reader.readUnsignedChar();
+        }catch (IOException e){
+            result = 1;
+        }
+        return result == 0;
+    }
+
+    @NonNull
+    private static byte[] lcd_mode_package(int cmd, @Nullable byte[] data){
+        int data_len = (data==null?0:data.length);
+        byte[] r = new byte[2+ data_len];
+        r[0] = (byte)0xCE;
+        r[1] = (byte)((data_len << 3) | (cmd & 7));
+
+        if(data!=null){
+            System.arraycopy(data, 0, r, 2, data.length);
+        }
+
+        //Log.i(TAG, "lcd_mode_package "+Util.hex(r, r.length));
+
+        return r;
+    }
+
+    @NonNull
+    public static byte[] alloc_cach_package(int size){
+        byte[] data = new byte[2];
+        data[0] = (byte)(size & 0xff);
+        data[1] = (byte)(size>>8);
+        return lcd_mode_package(1,data );
+    }
+
+    @NonNull
+    public static byte[] recv_data_package(@NonNull byte[] data){
+        return lcd_mode_package(2, data);
+    }
+
+    @NonNull
+    public static byte[] cach_crc_package(int crc){
+        byte[] data = new byte[2];
+        data[0] = (byte)(crc & 0xff);
+        data[1] = (byte)(crc>>8);
+        return lcd_mode_package(3,data );
+    }
+
+    @NonNull
+    public static byte[] extract_and_send_to_lcd_package(){
+        return lcd_mode_package(4, null);
+    }
+
+    @NonNull
+    public static byte[] cach_send_to_lcd_package(){
+        return lcd_mode_package(5, null);
+    }
+
+    @NonNull
+    public static byte[] exit_lcd_mode_package(){
+        return lcd_mode_package(6, null);
+    }
+
+    public static boolean parseLcdResult(@NonNull byte[] ack, int ack_len){
+        return ack_len >= 5 && ack[0] == (byte)0xDE && ack[2] == 0;
+    }
+
 
     @Nullable
     public static DeviceState parseStatus(@NonNull byte[] pkg, int pkg_len){

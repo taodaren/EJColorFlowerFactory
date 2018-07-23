@@ -9,8 +9,12 @@ import java.util.Locale;
 
 public class Util {
     public static String hex(byte[] data, int len){
+        return hex(data, 0, Math.min(len, data.length));
+    }
+
+    public static String hex(byte[] data, int start, int end){
         StringBuilder sb = new StringBuilder();
-        for(int i=0;i<len && i<data.length;i++){
+        for(int i=start;i<end;i++){
             sb.append(String.format(Locale.US, "%02X ", (int)data[i] & 0xff));
         }
         return sb.toString();

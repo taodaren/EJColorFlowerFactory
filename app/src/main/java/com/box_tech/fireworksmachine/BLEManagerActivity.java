@@ -491,14 +491,17 @@ public class BLEManagerActivity extends AppCompatActivity {
     private final Object mGattOperationLock = new Object();
 
     private void add(GattOperation op){
+        GattOperation to_run = null;
         synchronized (mGattOperationLock){
-            if(mCurrentGattOperation == null){
-                if(op.run()){
-                    mCurrentGattOperation = op;
-                }
+            mGattOperations.addLast(op);
+            if(mCurrentGattOperation == null ){
+                mCurrentGattOperation = mGattOperations.pollFirst();
+                to_run = mCurrentGattOperation;
             }
-            else{
-                mGattOperations.push(op);
+        }
+        if(to_run!=null){
+            if(!to_run.run()){
+                remove();
             }
         }
     }
@@ -512,16 +515,19 @@ public class BLEManagerActivity extends AppCompatActivity {
     }
 
     private void remove(){
-        synchronized (mGattOperationLock){
-            mCurrentGattOperation = null;
-            while(!mGattOperations.isEmpty()){
-                mCurrentGattOperation = mGattOperations.pop();
-                if(mCurrentGattOperation.run()){
+        while(true){
+            GattOperation to_run;
+            synchronized (mGattOperationLock){
+                mCurrentGattOperation = mGattOperations.pollFirst();
+                to_run = mCurrentGattOperation;
+            }
+            if(to_run != null){
+                if(to_run.run()){
                     break;
                 }
-                else{
-                    mCurrentGattOperation = null;
-                }
+            }
+            else{
+                break;
             }
         }
     }
@@ -643,12 +649,14 @@ public class BLEManagerActivity extends AppCompatActivity {
         return  (mgr!=null) && mgr.setWriteChannel(uuid);
     }
 
-    boolean send(String mac, byte[] data){
+    boolean send(String mac, byte[] data, boolean encrypt){
         Log.i(TAG, "send:"+Util.hex(data, data.length));
         if(mShutdown){
             return false;
         }
-        data = Protocol.wrapped_package(data);
+        if(encrypt){
+            data = Protocol.wrapped_package(data);
+        }
         DeviceManager mgr = mDeviceManagerSet.get(mac);
         if(mgr != null && mgr.connected && mgr.gatt != null){
             BluetoothGattCharacteristic ch = mgr.getWriteChannel();

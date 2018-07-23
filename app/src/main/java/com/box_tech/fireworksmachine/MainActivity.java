@@ -14,6 +14,7 @@ import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.CheckedTextView;
 import android.widget.ListView;
@@ -33,6 +34,8 @@ import com.box_tech.fireworksmachine.page.DeviceConfigFragment;
 import com.box_tech.fireworksmachine.page.PageAdapter;
 import com.box_tech.fireworksmachine.page.group.GroupFragment;
 import com.box_tech.fireworksmachine.utils.Util;
+import com.box_tech.sun_lcd.SunLcd;
+import com.box_tech.sun_lcd.Zlib;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -40,7 +43,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import static android.app.AlertDialog.THEME_HOLO_DARK;
-import static android.app.AlertDialog.THEME_HOLO_LIGHT;
 
 public class MainActivity extends BLEManagerActivity implements ISendCommand,
         DeviceConfigFragment.OnFragmentInteractionListener,
@@ -69,6 +71,25 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);// 保持常亮的屏幕的状态
+
+        /*
+        try{
+            byte[] b = SunLcd.makeBinary(this, "801234");
+            byte[][] r = Zlib.createCompressedChunck(b);
+            if(r==null){
+                Log.e(TAG, "分包失败");
+            }
+            else{
+                for(byte[] z : r){
+                    Log.d(TAG, "包长度 "+z.length);
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }*/
 
         mDeviceListAdapter = new DeviceListAdapter(this, mDeviceList );
         mDeviceListAdapter.setSendCommand(this);
@@ -342,14 +363,18 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         registerPeriod(mac + "-status", new Runnable() {
                     @Override
                     public void run() {
+                        ProtocolWithDevice pd = mProtocolList.get(mac);
+                        if(pd==null||pd.isLcdMode()){
+                            return;
+                        }
                         Device device = getDevice(mac);
                         if(device!=null){
                             DeviceConfig config = device.getConfig();
                             long id = (config==null)?0:config.mID;
                             if(config==null || mRequestConfig){
-                                mRequestConfig = ! send(mac, Protocol.get_config_package(id));
+                                mRequestConfig = ! send(mac, Protocol.get_config_package(id), true);
                             }
-                            send(mac, Protocol.get_status_package(id));
+                            send(mac, Protocol.get_status_package(id), true);
                         }
                     }
                 },
@@ -393,14 +418,22 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
 
     @Override
     public void sendCommand(@NonNull Device device, @NonNull byte[] pkg) {
-        send(device.getAddress(), pkg);
-        mRequestConfig = true;
+        String mac = device.getAddress();
+        Protocol p = mProtocolList.get(mac);
+        if(p!=null){
+            if( p.isLcdMode() == Protocol.isLcdModeCommand(pkg)){
+                send(device.getAddress(), pkg, !p.isLcdMode());
+                if( !p.isLcdMode() ){
+                    mRequestConfig = true;
+                }
+            }
+        }
     }
 
     @Override
     public void sendCommand(@NonNull Device device, @NonNull byte[] pkg, OnReceivePackage callback) {
         mPackageNeedAckList.push(new PackageNeedAck(device.getAddress(), pkg, callback));
-        send(device.getAddress(), pkg);
+        sendCommand(device, pkg);
     }
 
     private static class PackageNeedAck{

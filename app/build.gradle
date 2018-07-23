@@ -9,12 +9,24 @@ android {
         versionCode getGitVersionCode()
         versionName "${getGitVersion()}"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                abiFilters 'armeabi-v7a'
+            }
+        }
     }
     buildTypes {
         release {
             minifyEnabled true
             zipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+
         }
     }
 

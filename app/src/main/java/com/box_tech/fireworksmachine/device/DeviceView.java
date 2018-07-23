@@ -1,20 +1,31 @@
 package com.box_tech.fireworksmachine.device;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.util.ArrayMap;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.box_tech.fireworksmachine.R;
+import com.box_tech.fireworksmachine.Settings;
+import com.box_tech.fireworksmachine.device.Server.BindDevice;
+import com.box_tech.fireworksmachine.login.LoginSession;
+import com.box_tech.fireworksmachine.utils.CRC16;
+import com.box_tech.sun_lcd.SunLcd;
+import com.box_tech.sun_lcd.Zlib;
 import com.lantouzi.wheelview.WheelView;
 
 import java.lang.ref.WeakReference;
@@ -33,8 +44,12 @@ import cn.carbswang.android.numberpickerview.library.NumberPickerView;
  */
 
 public class DeviceView extends LinearLayout implements View.OnClickListener{
+    private final static String TAG = "DeviceView";
     private Device mDevice;
     private ISendCommand mSendCommand = null;
+    private Button mLCDButton = null;
+    private long mIDByMac = 0;
+    Handler handler;
 
     public DeviceView(Context context){
         super(context);
@@ -50,6 +65,7 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
     }
 
     private void initView(Context context){
+        handler = new Handler();
         LayoutInflater.from(context).inflate(R.layout.device_view, this);
         setupClickListeners(this);
     }
@@ -146,7 +162,304 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
         mButton2Layout.put(R.id.bt_add_material, R.layout.edit_add_material);
     }
 
-    private void setupClickListeners(View root){
+    private void startBindDevice(){
+        LoginSession session = Settings.getLoginSessionInfo(getContext());
+        final String mac = mDevice.getAddress();
+        new BindDevice.Request(mac,  session.getToken(), null, new BindDevice.OnFinished() {
+            @Override
+            public void onOK(@Nullable Activity activity, @NonNull final BindDevice.Result result) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        long id = Integer.parseInt(result.getData());
+                        mIDByMac = id;
+                        Log.d(TAG, "设备ID为 "+id);
+                        startSetDeviceID(id);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailed(@Nullable Activity activity, @NonNull final String message) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getContext(), "获取ID失败:"+message, Toast.LENGTH_SHORT).show();
+                        mLCDButton.setEnabled(false);
+                    }
+                });
+            }
+        }).run();
+    }
+
+    private void startSetDeviceID(long id){
+        if( mDevice.getId() != id ){
+            if(mSendCommand!=null ){
+                mSendCommand.sendCommand(mDevice,
+                        Protocol.set_id_package(mDevice.getId(), id));
+            }
+            mDevice.setId(id);
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    startEnterLCDMode();
+                }
+            }, 200);
+        }
+        else{
+            startEnterLCDMode();
+        }
+    }
+
+    private void startEnterLCDMode(){
+        if(mSendCommand!=null){
+            final long device_id = mDevice.getConfig().mID;
+            mSendCommand.sendCommand(mDevice,
+                    Protocol.enter_lcd_mode_package(device_id), new OnReceivePackage() {
+                        @Override
+                        public void ack(@NonNull byte[] pkg) {
+                            if( Protocol.parse_enter_lcd_mode_ack(pkg, pkg.length)){
+                                startFlash_Step_Head();
+                            }
+                            else{
+                                Log.e(TAG, "进入液晶屏失败");
+                                mLCDButton.setEnabled(true);
+                            }
+                        }
+
+                        @Override
+                        public void timeout() {
+                            Log.e(TAG, "进入液晶屏超时");
+                            new CommandChain(){
+                                @Override
+                                void result(boolean sucess, int step) {
+                                    if(sucess){
+                                        Log.d(TAG, "已经在液晶屏模式");
+                                        startFlash_Step_Head();
+                                    }
+                                    else{
+                                        mLCDButton.setEnabled(true);
+                                    }
+                                }
+                            }
+                                    .add(Protocol.alloc_cach_package(1), true, "TRY ALLOC CACH")
+                                    .start();
+                        }
+                    });
+        }
+    }
+
+    private interface OnLcdCommandCallback{
+        void result(boolean success);
+    }
+
+    private static class PackageInfo{
+        byte[] pkg = null;
+        boolean need_ack = false;
+        int delay = 0;
+        String description = "";
+        boolean mark = false;
+        int retry_count = 0;
+
+        PackageInfo(){}
+        PackageInfo(byte[] pkg, boolean need_ack, String description){
+            this.pkg = pkg;
+            this.need_ack = need_ack;
+            this.description = description;
+        }
+        PackageInfo(byte[] pkg, boolean need_ack, String description, int retry_count){
+            this.pkg = pkg;
+            this.need_ack = need_ack;
+            this.description = description;
+            this.retry_count = retry_count;
+        }
+        PackageInfo(int delay){
+            this.delay = delay;
+            this.description = "延时 "+delay+" ms";
+        }
+    }
+
+    private class CommandChain{
+        private List<PackageInfo> packages = new LinkedList<>();
+        private int cur_package = 0;
+        private int mark_point = 0;
+        CommandChain add(byte[] cmd, boolean need_ack, String description){
+            packages.add(new PackageInfo(cmd,need_ack, description));
+            return this;
+        }
+        CommandChain add(byte[] cmd, boolean need_ack, String description, int retry_count){
+            packages.add(new PackageInfo(cmd,need_ack, description, retry_count));
+            return this;
+        }
+        CommandChain delay(int delay){
+            packages.add(new PackageInfo(delay));
+            return this;
+        }
+        CommandChain setMark(){
+            PackageInfo pi = new PackageInfo();
+            pi.mark = true;
+            pi.description = "mark";
+            packages.add(pi);
+            return this;
+        }
+
+        private void start_next(){
+            if(cur_package+1<packages.size()){
+                cur_package += 1;
+                start();
+            }
+            else{
+                result(true, cur_package);
+            }
+        }
+        void start(){
+            final PackageInfo pkg_info = packages.get(cur_package);
+            if(pkg_info.mark){
+                mark_point = cur_package;
+                start_next();
+                return;
+            }
+            if(pkg_info.pkg == null){
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        start_next();
+                    }
+                }, pkg_info.delay);
+                return;
+            }
+
+            if(mSendCommand!=null){
+                if(pkg_info.need_ack){
+                    Log.d(TAG, "["+cur_package+"]发送 " + pkg_info.description);
+                    mSendCommand.sendCommand(mDevice, pkg_info.pkg, new OnReceivePackage() {
+                        @Override
+                        public void ack(@NonNull byte[] pkg) {
+                            if( Protocol.parseLcdResult(pkg, pkg.length)){
+                                start_next();
+                            }
+                            else{
+                                Log.e(TAG, "["+cur_package+"]失败 " + pkg_info.description);
+                                if(pkg_info.retry_count>0){
+                                    pkg_info.retry_count -= 1;
+                                    Log.d(TAG, "["+cur_package+"]重试 " + pkg_info.description + "==>"+mark_point);
+                                    cur_package = mark_point;
+                                    start_next();
+                                }
+                                else{
+                                    result(false, cur_package);
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void timeout() {
+                            Log.e(TAG, "["+cur_package+"]超时 " + pkg_info.description);
+                            if(pkg_info.retry_count>0){
+                                pkg_info.retry_count -= 1;
+                                Log.d(TAG, "["+cur_package+"]重试 " + pkg_info.description + "==>"+mark_point);
+                                cur_package = mark_point;
+                                start_next();
+                            }
+                            else{
+                                result(false, cur_package);
+                            }
+                        }
+                    });
+                }
+                else{
+                    mSendCommand.sendCommand(mDevice, pkg_info.pkg);
+                    start_next();
+                }
+            }
+            else{
+                result(false, cur_package);
+            }
+        }
+        void result(boolean success, int step){}
+    }
+
+    private static void addCommand(@NonNull byte[] b, int wait_time, boolean encrypted, String description, CommandChain commandChain){
+        commandChain
+                .setMark()
+                .add(Protocol.alloc_cach_package(b.length), true, description + " :START", 3);
+
+        for(int i=0;i<b.length;i+=16){
+            int n = Math.min(b.length-i, 16);
+            byte[] x = new byte[n];
+            System.arraycopy(b, i, x, 0, n);
+            commandChain.add(Protocol.recv_data_package(x), true, description + " :DATA["+i+"]"+n, 3);
+        }
+        commandChain
+                .add(Protocol.cach_crc_package(CRC16.calculate(b, b.length)), true, description + " :CRC", 3);
+        if(encrypted){
+            commandChain.add(Protocol.extract_and_send_to_lcd_package(), true, description + " :EXTRACT_SEND");
+        }
+        else{
+            commandChain.add(Protocol.cach_send_to_lcd_package(), true, description + " :SEND");
+        }
+        if(wait_time>0){
+            commandChain.delay(wait_time);
+        }
+    }
+
+    private void startflashLCD(final OnLcdCommandCallback callback){
+        final int head_size = 42;
+
+        byte[] mBinary = null;
+        byte[][] mBinaryChunks = null;
+        try{
+            mBinary = SunLcd.makeBinary(getContext(), ""+mIDByMac);
+        }catch (Exception e){
+            e.printStackTrace();
+            callback.result(false);
+        }
+
+        if(mBinary!=null){
+            byte[] x = new byte[mBinary.length-head_size];
+            System.arraycopy(mBinary, head_size, x, 0, x.length);
+            mBinaryChunks = Zlib.createCompressedChunck(x);
+        }
+
+        if(mBinaryChunks==null){
+            callback.result(false);
+            return ;
+        }
+
+        CommandChain commandChain = new CommandChain(){
+            @Override
+            void result(boolean sucess, int step) {
+                Log.d(TAG, "命令步骤 "+step + " success="+sucess);
+                callback.result(sucess);
+            }
+        };
+
+        String cmd = "FS_HEAD("+head_size+");\r\n";
+        addCommand(cmd.getBytes(), 200, false, "FS_HEAD", commandChain);
+        byte[] head = new byte[head_size];
+        System.arraycopy(mBinary, 0, head, 0, head_size);
+        addCommand(head, 500, false, "FS_HEAD_DATA", commandChain);
+        cmd = "FS_DLOAD("+(mBinary.length-head_size)+");\r\n";
+        addCommand(cmd.getBytes(), 500, false, "FS_DLOAD", commandChain);
+        for(byte[] chunk : mBinaryChunks){
+            addCommand(chunk, 0, true, "CHUNK "+chunk.length, commandChain);
+        }
+
+        commandChain.add(Protocol.exit_lcd_mode_package(), true, "EXIT LCD MODE");
+
+        commandChain.start();
+    }
+
+    private void startFlash_Step_Head(){
+        startflashLCD( new OnLcdCommandCallback() {
+            @Override
+            public void result(boolean success) {
+                mLCDButton.setEnabled(true);
+            }
+        });
+    }
+
+    private void setupClickListeners(final View root){
         for(int id : mButton2Layout.keySet()){
             root.findViewById(id).setOnClickListener(this);
         }
@@ -159,6 +472,19 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
                     mSendCommand.sendCommand(mDevice,
                             Protocol.jet_stop_package(device_id));
                 }
+            }
+        });
+
+        root.findViewById(R.id.bt_lcd).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(final View v) {
+                if( mDevice == null || mDevice.getConfig() == null || mSendCommand == null ){
+                    Toast.makeText(v.getContext(), "暂时无法进入LCD模式", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                mLCDButton = (Button)v;
+                v.setEnabled(false);
+                startBindDevice();
             }
         });
     }

@@ -532,12 +532,20 @@
             android:text="@string/jet_stop" />
 
         <Button
-            style="?android:attr/buttonStyle"
             android:id="@+id/bt_add_material"
+            style="?android:attr/buttonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/add_material" />
+
+        <Button
+            android:id="@+id/bt_lcd"
+            style="?android:attr/buttonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/lcd" />
     </LinearLayout>
 
 
