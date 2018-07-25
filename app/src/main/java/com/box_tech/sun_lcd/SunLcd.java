@@ -7,6 +7,7 @@ import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -14,15 +15,21 @@ import java.util.Map;
 public class SunLcd {
     @NonNull
     public static byte[] makeQRCodeBitVector(String id) throws Exception{
-        final String text = "http://60.205.226.109/index.php/index/api/add_device/device_id/"+id;
-        final int n = 33;
+        final String text = "http://www.eejing.cn/JAD/"+id;
+        final int n = 25;
+
+        if(text.length()>47){
+            throw new Exception("URL太长");
+        }
 
         try{
             Map<EncodeHintType, Object> hints = new LinkedHashMap<>();
             hints.put(EncodeHintType.MARGIN, 0);
+            hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
+            hints.put(EncodeHintType.CHARACTER_SET, "ISO-8859-1");
             hints.put(EncodeHintType.MAX_SIZE, n);
             hints.put(EncodeHintType.MIN_SIZE, n);
-            BitMatrix bm = new QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, n, n, hints);
+            BitMatrix bm = new QRCodeWriter().encode(text.toUpperCase(), BarcodeFormat.QR_CODE, n, n, hints);
             if(bm.getWidth() != n){
                 throw new Exception("生成设备ID的二维码图片失败");
             }

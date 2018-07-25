@@ -173,11 +173,12 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
                         long id = Integer.parseInt(result.getData());
                         try{
                             mBarcodeData = SunLcd.makeQRCodeBitVector(""+id);
+                            Log.d(TAG, "设备ID为 "+id);
+                            startSetDeviceID(id);
                         }catch (Exception e){
                             Log.e(TAG, "生成二维码失败 "+id);
+                            onSetBarcodeFinished(false);
                         }
-                        Log.d(TAG, "设备ID为 "+id);
-                        startSetDeviceID(id);
                     }
                 });
             }
