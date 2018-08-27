@@ -24,15 +24,8 @@ public class Protocol {
     private final static int CMD_STATUS = 1;
     private final static int CMD_CONFIG = 2;
     private final static int CMD_SET_TEMP_THRESHOLD = 3;
-    private final static int CMD_SET_MOTOR_SPEED = 4;
-    private final static int CMD_SET_ID = 5;
-    private final static int CMD_SET_DMX_ADDRESS = 6;
     private final static int CMD_JET = 7;
-    private final static int CMD_ADD_MATERIAL = 8;
-    private final static int CMD_GET_TIMESTAMP = 9;
     private final static int CMD_STOP_JET = 10;
-    private final static int CMD_SET_GUALIAO_TIME = 11;
-    private final static int CMD_SET_BARCODE_DATA = 15;
 
     private final static int HEADER_LEN = 7;
     private final byte[] pkg = new byte[MAX_PKG_LEN];
@@ -211,11 +204,6 @@ public class Protocol {
         return pkg;
     }
 
-    public static boolean isLcdModeCommand(@NonNull byte[] pkg){
-        return pkg[0] == (byte)0xCE;
-    }
-
-
     private static final SecureRandom seedGen = new SecureRandom();
 
     @NonNull
@@ -295,34 +283,6 @@ public class Protocol {
     }
 
     @NonNull
-    public static byte[] set_motor_default_speed_package(long id, int[] speeds){
-        byte[] data = new byte[4];
-        data[0] = (byte)(speeds[0] & 0xff);
-        data[1] = (byte)(speeds[1] & 0xff);
-        data[2] = (byte)(speeds[2] & 0xff);
-        data[3] = (byte)(speeds[3] & 0xff);
-        return command_package(CMD_SET_MOTOR_SPEED, id, data);
-    }
-
-    @NonNull
-    public static byte[] set_id_package(long id, long new_id){
-        byte[] data = new byte[4];
-        data[0] = (byte)(new_id & 0xff);
-        data[1] = (byte)((new_id>>8) & 0xff);
-        data[2] = (byte)((new_id>>16) & 0xff);
-        data[3] = (byte)((new_id>>24) & 0xff);
-        return command_package(CMD_SET_ID, id, data);
-    }
-
-    @NonNull
-    public static byte[] set_dmx_address_package(long id, int dmx_address){
-        byte[] data = new byte[2];
-        data[0] = (byte)(dmx_address & 0xff);
-        data[1] = (byte)((dmx_address>>8) & 0xff);
-        return command_package(CMD_SET_DMX_ADDRESS, id, data);
-    }
-
-    @NonNull
     public static byte[] jet_package(long id, int delay, int duration, int high){
         byte[] data= new byte[5];
         data[0] = (byte)(delay & 0xff);
@@ -336,62 +296,6 @@ public class Protocol {
     @NonNull
     public static byte[] jet_stop_package(long id){
         return command_package(CMD_STOP_JET, id, null);
-    }
-
-    @NonNull
-    public static byte[] set_gualiao_time_package(long id, int time){
-        byte[] data= new byte[1];
-        data[0] = (byte)(time & 0xff);
-        return command_package(CMD_SET_GUALIAO_TIME, id, data);
-    }
-
-    @NonNull
-    public static byte[] get_timestamp_package(long id){
-        return command_package(CMD_GET_TIMESTAMP, id, null);
-    }
-
-    @NonNull
-    public static byte[] add_material(long id, int time, long stamp){
-        byte[] data= new byte[6];
-        data[0] = (byte)(time & 0xff);
-        data[1] = (byte)((time>>8) & 0xff);
-        data[2] = (byte)(stamp & 0xff);
-        data[3] = (byte)((stamp>>8) & 0xff);
-        data[4] = (byte)((stamp>>16) & 0xff);
-        data[5] = (byte)((stamp>>24) & 0xff);
-        return command_package(CMD_ADD_MATERIAL, id, data);
-    }
-
-    @NonNull
-    public static byte[] set_barcode_data(long id, byte[] data, int offset){
-        int len = Math.min(32, data.length-offset);
-        byte[] d = new byte[len+2];
-        d[0] = (byte)(offset & 0xff);
-        d[1] = (byte)(offset >> 8);
-        System.arraycopy(data, offset, d, 2, len);
-        return command_package(CMD_SET_BARCODE_DATA, id, d );
-    }
-
-    public static long parseTimestamp(@NonNull byte[] pkg, int pkg_len){
-        BinaryReader reader = new BinaryReader(new ByteArrayInputStream(pkg, 0, pkg_len));
-        try{
-            reader.skip(HEADER_LEN);
-            return reader.readUnsignedIntLSB();
-        }catch (IOException e){
-            return -1;
-        }
-    }
-
-    public static boolean parse_set_barcode_data_ack(@NonNull byte[] pkg, int pkg_len){
-        BinaryReader reader = new BinaryReader(new ByteArrayInputStream(pkg, 0, pkg_len));
-        int result;
-        try{
-            reader.skip(HEADER_LEN);
-            result = reader.readUnsignedChar();
-        }catch (IOException e){
-            result = 1;
-        }
-        return result == 0;
     }
 
 
@@ -435,16 +339,6 @@ public class Protocol {
             return config;
         }catch (IOException e){
             return null;
-        }
-    }
-
-    private static long parseID(byte[] pkg, int pkg_len){
-        BinaryReader reader = new BinaryReader(new ByteArrayInputStream(pkg, 0, pkg_len));
-        try{
-            reader.skip(3);
-            return reader.readUnsignedIntLSB();
-        }catch (IOException e){
-            return 0;
         }
     }
 }

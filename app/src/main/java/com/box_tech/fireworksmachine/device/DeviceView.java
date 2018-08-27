@@ -3,7 +3,6 @@ package com.box_tech.fireworksmachine.device;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Handler;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.util.ArrayMap;
 import android.util.AttributeSet;
@@ -16,7 +15,6 @@ import android.widget.Toast;
 import com.box_tech.fireworksmachine.R;
 import com.lantouzi.wheelview.WheelView;
 
-import java.lang.ref.WeakReference;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -151,43 +149,8 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
 
                 final long device_id = mDevice.getConfig().mID;
 
-                int time2add = 600 - mDevice.getState().mRestTime;
-                if(time2add>0){
-                    final WeakReference<Context> context = new WeakReference<>(v.getContext());
-
-                    mSendCommand.sendCommand(mDevice,
-                            Protocol.get_timestamp_package(device_id), new OnReceivePackage() {
-                                @Override
-                                public void ack(@NonNull byte[] pkg) {
-                                    long stamp = Protocol.parseTimestamp(pkg, pkg.length);
-                                    if(stamp>=0){
-                                        mSendCommand.sendCommand(mDevice, Protocol.add_material(device_id, 6000, stamp), new OnReceivePackage() {
-                                            @Override
-                                            public void ack(@NonNull byte[] pkg) {
-                                                final long device_id = mDevice.getConfig().mID;
-                                                mSendCommand.sendCommand(mDevice,
-                                                        Protocol.jet_package(device_id, 0, 10*600, 100));
-                                            }
-
-                                            @Override
-                                            public void timeout() {
-                                                Context c = context.get();
-                                                if(c!=null){
-                                                    Toast.makeText(c, "操作超时", Toast.LENGTH_SHORT).show();
-                                                }
-                                            }
-                                        });
-                                    }
-                                }
-
-                                @Override
-                                public void timeout() {
-                                    Context c = context.get();
-                                    if(c!=null){
-                                        Toast.makeText(c, "操作超时", Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                            });
+                if(mDevice.getState().mRestTime == 0){
+                    Toast.makeText(v.getContext(), "没有剩余时间", Toast.LENGTH_SHORT).show();
                 }
                 else{
                     mSendCommand.sendCommand(mDevice,
