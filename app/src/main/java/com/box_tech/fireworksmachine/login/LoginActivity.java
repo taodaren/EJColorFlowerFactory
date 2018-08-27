@@ -132,15 +132,5 @@ public class LoginActivity extends AppCompatActivity {
         mPasswordView.setError(String.format(Locale.CHINA, getString(R.string.error_login_failed), message));
         mPasswordView.requestFocus();
     }
-
-    public void onClickRegister(@SuppressWarnings("unused") View view){
-        RegisterActivity.start_me(this, maPhoneNumberView.getText().toString());
-        finish();
-    }
-
-    public void onClickResetPassword(@SuppressWarnings("unused") View view){
-        ResetPasswordActivity.start_me(this, maPhoneNumberView.getText().toString());
-        finish();
-    }
 }
 
