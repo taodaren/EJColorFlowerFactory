@@ -1,40 +1,27 @@
 package com.box_tech.fireworksmachine.device;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.util.ArrayMap;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.box_tech.fireworksmachine.R;
-import com.box_tech.fireworksmachine.Settings;
-import com.box_tech.fireworksmachine.device.Server.BindDevice;
-import com.box_tech.fireworksmachine.login.LoginSession;
-import com.box_tech.sun_lcd.SunLcd;
 import com.lantouzi.wheelview.WheelView;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import cn.box_tech.zhihuiyuan.zxing.activity.CaptureActivity;
-import cn.carbswang.android.numberpickerview.library.NumberPickerView;
 
 /**
  * Created by scc on 2018/3/5.
@@ -42,12 +29,8 @@ import cn.carbswang.android.numberpickerview.library.NumberPickerView;
  */
 
 public class DeviceView extends LinearLayout implements View.OnClickListener{
-    private final static String TAG = "DeviceView";
     private Device mDevice;
     private ISendCommand mSendCommand = null;
-    private Button mLCDButton = null;
-    private byte[] mBarcodeData;
-    private int mBarcodeDataOffset = 0;
     Handler handler;
 
     public DeviceView(Context context){
@@ -150,145 +133,82 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
     private final static Map<Integer, Integer> mButton2Layout = new ArrayMap<>();
     static{
         mButton2Layout.put(R.id.bt_edit_temperature_threshold, R.layout.edit_temperature_threshold);
-        mButton2Layout.put(R.id.bt_edit_motor_1_default_speed, R.layout.edit_motor_speed);
-        mButton2Layout.put(R.id.bt_edit_motor_2_default_speed, R.layout.edit_motor_speed);
-        mButton2Layout.put(R.id.bt_edit_motor_3_default_speed, R.layout.edit_motor_speed);
-        mButton2Layout.put(R.id.bt_edit_motor_4_default_speed, R.layout.edit_motor_speed);
-        mButton2Layout.put(R.id.bt_edit_dmx_addr, R.layout.edit_dmx);
-        mButton2Layout.put(R.id.bt_edit_device_id, R.layout.edit_device_id);
-        mButton2Layout.put(R.id.bt_jet, R.layout.edit_jet);
-        mButton2Layout.put(R.id.bt_edit_gualiao_time, R.layout.edit_gualiao_time);
-        mButton2Layout.put(R.id.bt_add_material, R.layout.edit_add_material);
     }
 
-    private void startBindDevice(){
-        LoginSession session = Settings.getLoginSessionInfo(getContext());
-        final String mac = mDevice.getAddress();
-        new BindDevice.Request(mac,  session.getToken(), null, new BindDevice.OnFinished() {
-            @Override
-            public void onOK(@Nullable Activity activity, @NonNull final BindDevice.Result result) {
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        long id = Integer.parseInt(result.getData());
-                        try{
-                            mBarcodeData = SunLcd.makeQRCodeBitVector(""+id);
-                            Log.d(TAG, "设备ID为 "+id);
-                            startSetDeviceID(id);
-                        }catch (Exception e){
-                            Log.e(TAG, "生成二维码失败 "+id);
-                            onSetBarcodeFinished(false);
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public void onFailed(@Nullable Activity activity, @NonNull final String message) {
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(getContext(), "获取ID失败:"+message, Toast.LENGTH_SHORT).show();
-                        mLCDButton.setEnabled(false);
-                    }
-                });
-            }
-        }).run();
-    }
-
-    private void startSetDeviceID(long id){
-        if( mDevice.getId() != id ){
-            if(mSendCommand!=null ){
-                mSendCommand.sendCommand(mDevice,
-                        Protocol.set_id_package(mDevice.getId(), id));
-            }
-            mDevice.setId(id);
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    startSetBarcodeData();
-                }
-            }, 200);
-        }
-        else{
-            startSetBarcodeData();
-        }
-    }
-
-    private void setBarcodeData(){
-        if(mSendCommand!=null && mBarcodeData != null) {
-            Log.d(TAG, "二维码数据 "+mBarcodeDataOffset+"/"+mBarcodeData.length);
-            mSendCommand.sendCommand(mDevice,
-                    Protocol.set_barcode_data(0, mBarcodeData, mBarcodeDataOffset),
-                    new OnReceivePackage() {
-                        @Override
-                        public void ack(@NonNull byte[] pkg) {
-                            if(Protocol.parse_set_barcode_data_ack(pkg, pkg.length)){
-                                mBarcodeDataOffset += 32;
-                                if(mBarcodeDataOffset>mBarcodeData.length){
-                                    Log.d(TAG, "设置二维码数据完成");
-                                    onSetBarcodeFinished(true);
-                                }
-                                else{
-                                    setBarcodeData();
-                                }
-                            }
-                            else{
-                                Log.e(TAG, "设置二维码数据失败");
-                                onSetBarcodeFinished(false);
-                            }
-                        }
-
-                        @Override
-                        public void timeout() {
-                            Log.e(TAG, "设置二维码数据超时");
-                            onSetBarcodeFinished(false);
-                        }
-                    });
-        }
-    }
-
-    private void onSetBarcodeFinished(boolean success){
-        if(!success){
-            Context context = getContext();
-            if(context!=null){
-                Toast.makeText(context, "设置二维码失败", Toast.LENGTH_SHORT).show();
-            }
-        }
-        mLCDButton.setEnabled(true);
-    }
-
-    private void startSetBarcodeData(){
-        mBarcodeDataOffset = 0;
-        setBarcodeData();
-    }
 
     private void setupClickListeners(final View root){
         for(int id : mButton2Layout.keySet()){
             root.findViewById(id).setOnClickListener(this);
         }
 
-        root.findViewById(R.id.bt_jet_stop).setOnClickListener(new OnClickListener() {
+        root.findViewById(R.id.bt_jet).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mSendCommand!=null){
-                    final long device_id = mDevice.getConfig().mID;
+                if( mDevice == null || mDevice.getConfig() == null || mSendCommand == null ){
+                    Toast.makeText(v.getContext(), "暂时无法编辑", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                final long device_id = mDevice.getConfig().mID;
+
+                int time2add = 600 - mDevice.getState().mRestTime;
+                if(time2add>0){
+                    final WeakReference<Context> context = new WeakReference<>(v.getContext());
+
                     mSendCommand.sendCommand(mDevice,
-                            Protocol.jet_stop_package(device_id));
+                            Protocol.get_timestamp_package(device_id), new OnReceivePackage() {
+                                @Override
+                                public void ack(@NonNull byte[] pkg) {
+                                    long stamp = Protocol.parseTimestamp(pkg, pkg.length);
+                                    if(stamp>=0){
+                                        mSendCommand.sendCommand(mDevice, Protocol.add_material(device_id, 6000, stamp), new OnReceivePackage() {
+                                            @Override
+                                            public void ack(@NonNull byte[] pkg) {
+                                                final long device_id = mDevice.getConfig().mID;
+                                                mSendCommand.sendCommand(mDevice,
+                                                        Protocol.jet_package(device_id, 0, 10*600, 100));
+                                            }
+
+                                            @Override
+                                            public void timeout() {
+                                                Context c = context.get();
+                                                if(c!=null){
+                                                    Toast.makeText(c, "操作超时", Toast.LENGTH_SHORT).show();
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+
+                                @Override
+                                public void timeout() {
+                                    Context c = context.get();
+                                    if(c!=null){
+                                        Toast.makeText(c, "操作超时", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+                }
+                else{
+                    mSendCommand.sendCommand(mDevice,
+                            Protocol.jet_package(device_id, 0, 10*600, 100));
                 }
             }
         });
 
-        root.findViewById(R.id.bt_lcd).setOnClickListener(new OnClickListener() {
+
+        root.findViewById(R.id.bt_jet_stop).setOnClickListener(new OnClickListener() {
             @Override
-            public void onClick(final View v) {
+            public void onClick(View v) {
+
                 if( mDevice == null || mDevice.getConfig() == null || mSendCommand == null ){
-                    Toast.makeText(v.getContext(), "暂时无法操作", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(v.getContext(), "暂时无法编辑", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                mLCDButton = (Button)v;
-                v.setEnabled(false);
-                startBindDevice();
+
+                final long device_id = mDevice.getConfig().mID;
+                mSendCommand.sendCommand(mDevice,
+                        Protocol.jet_stop_package(device_id));
             }
         });
     }
@@ -308,126 +228,6 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
                 etLow.selectIndex(values.indexOf(String.valueOf(mDevice.getConfig().mTemperatureThresholdLow)));
                 etHeight.selectIndex(values.indexOf(String.valueOf(mDevice.getConfig().mTemperatureThresholdHigh)));
                 break;
-            case R.id.bt_edit_motor_1_default_speed:
-            case R.id.bt_edit_motor_2_default_speed:
-            case R.id.bt_edit_motor_3_default_speed:
-            case R.id.bt_edit_motor_4_default_speed:
-                WheelView[] etMotor = new WheelView[]{
-                        editView.findViewById(R.id.et_motor_1),
-                        editView.findViewById(R.id.et_motor_2),
-                        editView.findViewById(R.id.et_motor_3),
-                        editView.findViewById(R.id.et_motor_4)
-                };
-                final List<String> speeds = new LinkedList<>();
-                for(int t = 0; t <= 100; t ++ ){
-                    speeds.add(String.valueOf(t));
-                }
-                for(int i=0;i<etMotor.length;i++){
-                    etMotor[i].setItems(speeds);
-                    etMotor[i].setMinSelectableIndex(1);
-                    etMotor[i].setMaxSelectableIndex(speeds.size()-2);
-                    etMotor[i].selectIndex(speeds.indexOf(String.valueOf(mDevice.getConfig().mMotorDefaultSpeed[i])));
-                }
-                break;
-            case R.id.bt_edit_dmx_addr:
-                WheelView etDMX = editView.findViewById(R.id.et_dmx);
-                final List<String> addresses = new LinkedList<>();
-                for(int a = 0; a <= 511; a ++ ){
-                    addresses.add(String.valueOf(a));
-                }
-                etDMX.setItems(addresses);
-                etDMX.selectIndex(addresses.indexOf(String.valueOf(mDevice.getConfig().mDMXAddress)));
-                break;
-            case R.id.bt_edit_device_id:
-                final NumberPickerView[] etID = new NumberPickerView[]{
-                    editView.findViewById(R.id.et_id_number_1),
-                    editView.findViewById(R.id.et_id_number_2),
-                    editView.findViewById(R.id.et_id_number_3),
-                    editView.findViewById(R.id.et_id_number_4),
-                    editView.findViewById(R.id.et_id_number_5),
-                        editView.findViewById(R.id.et_id_number_6),
-                };
-
-                ImageButton btScanID = editView.findViewById(R.id.bt_scan_id);
-                btScanID.setOnClickListener(new OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        CaptureActivity.viewToFill = etID;
-                        Intent intent = new Intent(editView.getContext(), CaptureActivity.class);
-                        editView.getContext().startActivity(intent);
-                    }
-                });
-
-                final String[] numbers = new String[10];
-                for(int i=0;i<10;i++){
-                    numbers[i] = String.valueOf(i);
-                }
-
-                long ID = mDevice.getConfig().mID;
-                for(NumberPickerView et : etID){
-                    et.setDisplayedValues(numbers);
-                    et.setMinValue(0);
-                    et.setMaxValue(numbers.length-1);
-                    et.setValue((int)(ID%10));
-                    ID /= 10;
-                }
-                break;
-            case R.id.bt_jet:
-                WheelView etDelay = editView.findViewById(R.id.et_jet_delay);
-                NumberPickerView etDurationMin = editView.findViewById(R.id.et_jet_duration_min);
-                NumberPickerView etDurationSec = editView.findViewById(R.id.et_jet_duration_sec);
-                WheelView etHigh = editView.findViewById(R.id.et_jet_high);
-                final List<String> delays = new ArrayList<>(500);
-                for(int i=0;i<500;i++){
-                    delays.add(String.valueOf(i*10));
-                }
-                etDelay.setItems(delays);
-
-                final String[] durations_min = new String[11];
-                for(int i=0;i<durations_min.length;i++){
-                    durations_min[i] = String.valueOf(i);
-                }
-                etDurationMin.setDisplayedValues(durations_min);
-                etDurationMin.setMinValue(0);
-                etDurationMin.setMaxValue(durations_min.length-1);
-                etDurationMin.setValue(2);
-
-                final String[] durations_sec = new String[60];
-                for(int i=0;i<durations_sec.length;i++){
-                    durations_sec[i] = String.valueOf(i);
-                }
-                etDurationSec.setDisplayedValues(durations_sec);
-                etDurationSec.setMinValue(0);
-                etDurationSec.setMaxValue(durations_sec.length-1);
-                etDurationSec.setValue(0);
-
-                final List<String> high = new ArrayList<>(11);
-                for(int i=0;i<=10;i++){
-                    high.add(String.valueOf(i));
-                }
-                etHigh.setItems(high);
-                etHigh.selectIndex(5);
-                break;
-            case R.id.bt_edit_gualiao_time:
-                WheelView etGualiao = editView.findViewById(R.id.et_gualiao_time);
-                final List<String> gualiao_values = new LinkedList<>();
-                for(int t = 0; t <= 100; t ++ ){
-                    gualiao_values.add(String.format(Locale.US, "%.1f", t/10.0));
-                }
-                etGualiao.setItems(gualiao_values);
-                etGualiao.selectIndex(mDevice.getConfig().mGualiaoTime);
-                break;
-            case R.id.bt_add_material:
-                NumberPickerView etMaterialTime = editView.findViewById(R.id.et_material_time);
-                final String[] material_time_list = new String[10];
-                for(int i=0;i<material_time_list.length;i++){
-                    material_time_list[i] = String.valueOf(i+1);
-                }
-                etMaterialTime.setDisplayedValues(material_time_list);
-                etMaterialTime.setMinValue(0);
-                etMaterialTime.setMaxValue(material_time_list.length-1);
-                etMaterialTime.setValue(4);
-                break;
         }
     }
 
@@ -435,7 +235,6 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
         if(mDevice==null){
             return;
         }
-        final WeakReference<Context> context = new WeakReference<>(editView.getContext());
         final long device_id = mDevice.getConfig().mID;
         switch (id){
             case R.id.bt_edit_temperature_threshold:
@@ -450,104 +249,6 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
                 }
                 byte[] pkg = Protocol.set_temperature_threshold_package(device_id, low, high);
                 if(mSendCommand!=null) mSendCommand.sendCommand(mDevice, pkg);
-                break;
-            case R.id.bt_edit_motor_1_default_speed:
-            case R.id.bt_edit_motor_2_default_speed:
-            case R.id.bt_edit_motor_3_default_speed:
-            case R.id.bt_edit_motor_4_default_speed:
-                WheelView[] etMotor = new WheelView[]{
-                        editView.findViewById(R.id.et_motor_1),
-                        editView.findViewById(R.id.et_motor_2),
-                        editView.findViewById(R.id.et_motor_3),
-                        editView.findViewById(R.id.et_motor_4)
-                };
-                int[] speeds = new int[etMotor.length];
-                for(int i=0;i<speeds.length;i++){
-                    speeds[i] = Integer.parseInt(
-                            etMotor[i].getItems().get(etMotor[i].getSelectedPosition()));
-                }
-                if(mSendCommand!=null){
-                    mSendCommand.sendCommand(mDevice,
-                            Protocol.set_motor_default_speed_package(device_id, speeds));
-                }
-                break;
-            case R.id.bt_edit_dmx_addr:
-                WheelView etDMX = editView.findViewById(R.id.et_dmx);
-                int address = Integer.parseInt(
-                        etDMX.getItems().get(etDMX.getSelectedPosition()));
-                if(mSendCommand!=null){
-                    mSendCommand.sendCommand(mDevice,
-                            Protocol.set_dmx_address_package(device_id, address));
-                }
-                break;
-            case R.id.bt_edit_device_id:
-                NumberPickerView[] etID = new NumberPickerView[]{
-                        editView.findViewById(R.id.et_id_number_1),
-                        editView.findViewById(R.id.et_id_number_2),
-                        editView.findViewById(R.id.et_id_number_3),
-                        editView.findViewById(R.id.et_id_number_4),
-                        editView.findViewById(R.id.et_id_number_5),
-                        editView.findViewById(R.id.et_id_number_6),
-                };
-                long new_id = 0;
-                long f = 1;
-                for(NumberPickerView et : etID){
-                    new_id += f * et.getValue();
-                    f *= 10;
-                }
-                if(mSendCommand!=null && device_id != new_id){
-                    mSendCommand.sendCommand(mDevice,
-                            Protocol.set_id_package(device_id, new_id));
-                }
-                break;
-            case R.id.bt_jet:
-                WheelView etDelay = editView.findViewById(R.id.et_jet_delay);
-                NumberPickerView etDurationMin = editView.findViewById(R.id.et_jet_duration_min);
-                NumberPickerView etDurationSec = editView.findViewById(R.id.et_jet_duration_sec);
-                WheelView etHigh2 = editView.findViewById(R.id.et_jet_high);
-
-                final int delay = Integer.parseInt(etDelay.getItems().get(etDelay.getSelectedPosition()));
-                final int durationMin = etDurationMin.getValue();
-                final int durationSec = etDurationSec.getValue();
-                final int high2 = 10*Integer.parseInt(etHigh2.getItems().get(etHigh2.getSelectedPosition()));
-                final int duration = 60*durationMin+durationSec;
-
-                if(mSendCommand!=null){
-                    mSendCommand.sendCommand(mDevice,
-                            Protocol.jet_package(device_id, delay, 10*duration, high2));
-                }
-                break;
-            case R.id.bt_edit_gualiao_time:
-                WheelView etGualiao = editView.findViewById(R.id.et_gualiao_time);
-                final int gualiao = etGualiao.getSelectedPosition();
-                if(mSendCommand!=null){
-                    mSendCommand.sendCommand(mDevice,
-                            Protocol.set_gualiao_time_package(device_id, gualiao));
-                }
-                break;
-            case R.id.bt_add_material:
-                NumberPickerView etMaterialTime = editView.findViewById(R.id.et_material_time);
-                final int materialTime = (etMaterialTime.getValue()+1)*60;
-                if(mSendCommand!=null){
-                    mSendCommand.sendCommand(mDevice,
-                            Protocol.get_timestamp_package(device_id), new OnReceivePackage() {
-                                @Override
-                                public void ack(@NonNull byte[] pkg) {
-                                    long stamp = Protocol.parseTimestamp(pkg, pkg.length);
-                                    if(stamp>=0){
-                                        mSendCommand.sendCommand(mDevice, Protocol.add_material(device_id, materialTime, stamp ));
-                                    }
-                                }
-
-                                @Override
-                                public void timeout() {
-                                    Context c = context.get();
-                                    if(c!=null){
-                                        Toast.makeText(c, "操作超时", Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                            });
-                }
                 break;
         }
     }

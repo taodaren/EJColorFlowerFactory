@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 27
     defaultConfig {
-        applicationId "com.box_tech.fireworksmachine"
+        applicationId "com.box_tech.fireworksmachine.tester"
         minSdkVersion 21
         targetSdkVersion 27
         versionCode getGitVersionCode()
@@ -35,8 +35,14 @@ android {
     }
 }
 
+task showVersions{
+    println("showVersions "+getGitVersion())
+}
+
 static def getGitVersion() {
-    return 'git describe --tags --abbrev=4'.execute().text.trim()
+    def ver = 'git describe --tags --abbrev=4'.execute().text.trim()
+    def s = ver.split("-");
+    return s[0]+"."+s[2]+"."+s[3]+"."+s[1]
 }
 
 static def getGitVersionCode() {

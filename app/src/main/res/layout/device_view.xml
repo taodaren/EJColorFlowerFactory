@@ -106,13 +106,6 @@
             android:layout_gravity="end"
             android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/bt_edit_motor_1_default_speed"
-                android:layout_width="@dimen/edit_icon_size"
-                android:layout_height="@dimen/edit_icon_size"
-                android:layout_gravity="center_vertical"
-                android:background="@android:drawable/ic_menu_edit" />
-
             <TextView
                 android:id="@+id/tv_motor_speed_1"
                 android:layout_width="wrap_content"
@@ -148,13 +141,6 @@
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/bt_edit_motor_2_default_speed"
-                android:layout_width="@dimen/edit_icon_size"
-                android:layout_height="@dimen/edit_icon_size"
-                android:layout_gravity="center_vertical"
-                android:background="@android:drawable/ic_menu_edit" />
 
             <TextView
                 android:id="@+id/tv_motor_speed_2"
@@ -192,13 +178,6 @@
             android:layout_gravity="end"
             android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/bt_edit_motor_3_default_speed"
-                android:layout_width="@dimen/edit_icon_size"
-                android:layout_height="@dimen/edit_icon_size"
-                android:layout_gravity="center_vertical"
-                android:background="@android:drawable/ic_menu_edit" />
-
             <TextView
                 android:id="@+id/tv_motor_speed_3"
                 android:layout_width="wrap_content"
@@ -235,13 +214,6 @@
             android:layout_gravity="end"
             android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/bt_edit_motor_4_default_speed"
-                android:layout_width="@dimen/edit_icon_size"
-                android:layout_height="@dimen/edit_icon_size"
-                android:layout_gravity="center_vertical"
-                android:background="@android:drawable/ic_menu_edit" />
-
             <TextView
                 android:id="@+id/tv_motor_speed_4"
                 android:layout_width="wrap_content"
@@ -276,13 +248,6 @@
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/bt_edit_dmx_addr"
-                android:layout_width="@dimen/edit_icon_size"
-                android:layout_height="@dimen/edit_icon_size"
-                android:layout_gravity="center_vertical"
-                android:background="@android:drawable/ic_menu_edit" />
 
             <TextView
                 android:id="@+id/tv_dmx_addr"
@@ -445,13 +410,6 @@
             android:layout_gravity="end"
             android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/bt_edit_gualiao_time"
-                android:layout_width="@dimen/edit_icon_size"
-                android:layout_height="@dimen/edit_icon_size"
-                android:layout_gravity="center_vertical"
-                android:background="@android:drawable/ic_menu_edit" />
-
             <TextView
                 android:id="@+id/tv_gualiao_time"
                 android:layout_width="wrap_content"
@@ -489,13 +447,6 @@
             android:layout_gravity="end"
             android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/bt_edit_device_id"
-                android:layout_width="@dimen/edit_icon_size"
-                android:layout_height="@dimen/edit_icon_size"
-                android:layout_gravity="center_vertical"
-                android:background="@android:drawable/ic_menu_edit" />
-
             <TextView
                 android:id="@+id/tv_device_id"
                 android:layout_width="wrap_content"
@@ -531,21 +482,6 @@
             android:layout_weight="1"
             android:text="@string/jet_stop" />
 
-        <Button
-            android:id="@+id/bt_add_material"
-            style="?android:attr/buttonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/add_material" />
-
-        <Button
-            android:id="@+id/bt_lcd"
-            style="?android:attr/buttonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/lcd" />
     </LinearLayout>
 
 
