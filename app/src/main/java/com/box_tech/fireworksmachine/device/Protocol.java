@@ -14,8 +14,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 
 /**
- * Created by scc on 2018/3/8
- * 协议处理.
+ * 协议处理
  */
 
 public class Protocol {
@@ -32,23 +31,21 @@ public class Protocol {
     private int pkg_len = 0;
     private boolean translate = false;
 
-    public void onReceive(byte[] data){
-        for(byte b : data){
+    public void onReceive(byte[] data) {
+        for (byte b : data) {
             onByte(b);
             //onByteLevel2(b,false);
         }
     }
 
-    // 反转义
-    private void onByte(byte b){
-        if(translate){
+    /** 反转义 */
+    private void onByte(byte b) {
+        if (translate) {
             translate = false;
-            onByteLevel2( (byte)(((int)b & 0xff) ^ 0xFF), true );
-        }
-        else if( b == (byte)0xFE){
+            onByteLevel2((byte) (((int) b & 0xff) ^ 0xFF), true);
+        } else if (b == (byte) 0xFE) {
             translate = true;
-        }
-        else{
+        } else {
             onByteLevel2(b, false);
         }
     }
@@ -66,93 +63,90 @@ public class Protocol {
             40, 38, 11, 17, 12, 7, 35, 32, 27, 32, 2, 10, 0, 20, 0, 35, 45, 26, 1, 47, 33, 28, 46,
             42, 10, 43, 43, 29, 7
     };
-    private static byte map(byte[] S, int i, byte d){
+
+    private static byte map(byte[] S, int i, byte d) {
         int m = 0;
-        for(int j=0;j<8;j++){
-            int k = K[(i*8+j)%K.length];
-            m |= ((((int)S[k>>3] & (1<<(k&7)))!=0)?1:0)<<j;
+        for (int j = 0; j < 8; j++) {
+            int k = K[(i * 8 + j) % K.length];
+            m |= ((((int) S[k >> 3] & (1 << (k & 7))) != 0) ? 1 : 0) << j;
         }
-        return (byte)(((int)d & 0xff)^m);
+        return (byte) (((int) d & 0xff) ^ m);
     }
-    private byte map(int i, byte d){
+
+    private byte map(int i, byte d) {
         return map(S, i, d);
     }
-    //解密
-    private void onByteLevel2(byte b, boolean is_translated){
-        if(b == (byte)0xDC && !is_translated){
+
+    /** 解密 */
+    private void onByteLevel2(byte b, boolean is_translated) {
+        if (b == (byte) 0xDC && !is_translated) {
             s = 1;
-        }
-        else if(s==1){
-            data_len = (int)b & 0xff;
-            if(data_len>MAX_PKG_LEN){
+        } else if (s == 1) {
+            data_len = (int) b & 0xff;
+            if (data_len > MAX_PKG_LEN) {
                 s = 0;
-            }
-            else{
+            } else {
                 Sn = 0;
                 s = 2;
             }
-        }
-        else if(s==2){
+        } else if (s == 2) {
             S[Sn] = b;
-            Sn ++;
-            if(Sn>=S.length){
+            Sn++;
+            if (Sn >= S.length) {
                 s = 3;
                 pkg_len = 0;
             }
-        }
-        else if(s==3){
+        } else if (s == 3) {
             pkg[pkg_len] = map(pkg_len, b);
             pkg_len++;
-            if(pkg_len>=data_len){
+            if (pkg_len >= data_len) {
                 s = 0;
                 onPackage();
             }
         }
     }
 
-    private void onPackage(){
-        if(pkg_len>=9 && pkg[0] == (byte)0xCD){
-            int data_len = (int)pkg[1] & 0xff;
-            if(data_len+9 == pkg_len){
+    private void onPackage() {
+        if (pkg_len >= 9 && pkg[0] == (byte) 0xCD) {
+            int data_len = (int) pkg[1] & 0xff;
+            if (data_len + 9 == pkg_len) {
                 onPackageLengthValidated();
                 return;
             }
         }
-        Log.e(TAG, "malformed package "+ Util.hex(pkg, pkg_len));
+        Log.e(TAG, "malformed package " + Util.hex(pkg, pkg_len));
     }
 
-    public byte[] getPkg(){
+    public byte[] getPkg() {
         return Arrays.copyOfRange(pkg, 0, pkg_len);
     }
 
-    private void onPackageLengthValidated(){
-        if( CRC16.validate(pkg, pkg_len-2) ){
-            if((pkg[2] & 0x80) != 0){
-                Log.i(TAG, "ack package   "+Util.hex(pkg, pkg_len));
+    private void onPackageLengthValidated() {
+        if (CRC16.validate(pkg, pkg_len - 2)) {
+            if ((pkg[2] & 0x80) != 0) {
+                Log.i(TAG, "ack package " + Util.hex(pkg, pkg_len));
                 onAckPackage();
+            } else {
+                Log.e(TAG, "drop command package " + Util.hex(pkg, pkg_len));
             }
-            else{
-                Log.e(TAG, "drop command package "+Util.hex(pkg, pkg_len));
-            }
-        }
-        else{
-            Log.e(TAG, "CRC wrong package "+Util.hex(pkg, pkg_len));
+        } else {
+            Log.e(TAG, "CRC wrong package " + Util.hex(pkg, pkg_len));
         }
     }
 
-    private void onAckPackage(){
+    private void onAckPackage() {
         int cmd = pkg[2] & 0x7F;
-        //long id = parseID(pkg, pkg_len);
-        switch (cmd){
+//        long id = parseID(pkg, pkg_len);
+        switch (cmd) {
             case CMD_STATUS:
                 DeviceState ds = parseStatus(pkg, pkg_len);
-                if(ds != null){
+                if (ds != null) {
                     onReceivePackage(ds);
                 }
                 break;
             case CMD_CONFIG:
                 DeviceConfig config = parseConfig(pkg, pkg_len);
-                if(config!=null){
+                if (config != null) {
                     onReceivePackage(config);
                 }
                 break;
@@ -162,151 +156,148 @@ public class Protocol {
         }
     }
 
-    protected void onReceivePackage(@NonNull DeviceState state){
+    protected void onReceivePackage(@NonNull DeviceState state) {
     }
 
-    protected void onReceivePackage(@NonNull DeviceConfig config){
+    protected void onReceivePackage(@NonNull DeviceConfig config) {
     }
 
-    protected void onReceivePackage(@NonNull byte[] pkg, int pkg_len){
-        Log.e(TAG, "receive package "+Util.hex(pkg, pkg_len));
+    protected void onReceivePackage(@NonNull byte[] pkg, int pkg_len) {
+        Log.e(TAG, "receive package " + Util.hex(pkg, pkg_len));
     }
 
-    public static boolean isMatch(@NonNull byte[] cmd_pkg, @NonNull byte[] ack_pkg){
-        if(cmd_pkg[0] == (byte)0xCE && ack_pkg[0] == (byte)0xDE ){
+    public static boolean isMatch(@NonNull byte[] cmd_pkg, @NonNull byte[] ack_pkg) {
+        if (cmd_pkg[0] == (byte) 0xCE && ack_pkg[0] == (byte) 0xDE) {
             return (cmd_pkg[1] & 7) == ack_pkg[1];
         }
-        return (cmd_pkg[2] | (byte)0x80) == ack_pkg[2] &&
-                ((cmd_pkg[3]==0 && cmd_pkg[4]==0 &&cmd_pkg[5]==0 &&cmd_pkg[6]==0)||
-                        (cmd_pkg[3]==ack_pkg[3] && cmd_pkg[4]==ack_pkg[4] &&
-                                cmd_pkg[5]==ack_pkg[5] &&cmd_pkg[6]==ack_pkg[6]));
+        return (cmd_pkg[2] | (byte) 0x80) == ack_pkg[2] &&
+                ((cmd_pkg[3] == 0 && cmd_pkg[4] == 0 && cmd_pkg[5] == 0 && cmd_pkg[6] == 0) ||
+                        (cmd_pkg[3] == ack_pkg[3] && cmd_pkg[4] == ack_pkg[4] &&
+                                cmd_pkg[5] == ack_pkg[5] && cmd_pkg[6] == ack_pkg[6]));
     }
 
     @NonNull
-    public static byte[] command_package(int command, long id, @Nullable byte[] data){
-        final int data_len = (data==null)?0:data.length;
-        final byte[] pkg = new byte[9+data_len];
-        pkg[0] = (byte)0xCD;
-        pkg[1] = (byte)data_len;
-        pkg[2] = (byte)command;
-        pkg[3] = (byte)(id & 0xff);
-        pkg[4] = (byte)((id >>8)& 0xff);
-        pkg[5] = (byte)((id >>16)& 0xff);
-        pkg[6] = (byte)((id >>24)& 0xff);
-        if(data!=null){
+    public static byte[] command_package(int command, long id, @Nullable byte[] data) {
+        final int data_len = (data == null) ? 0 : data.length;
+        final byte[] pkg = new byte[9 + data_len];
+        pkg[0] = (byte) 0xCD;
+        pkg[1] = (byte) data_len;
+        pkg[2] = (byte) command;
+        pkg[3] = (byte) (id & 0xff);
+        pkg[4] = (byte) ((id >> 8) & 0xff);
+        pkg[5] = (byte) ((id >> 16) & 0xff);
+        pkg[6] = (byte) ((id >> 24) & 0xff);
+        if (data != null) {
             System.arraycopy(data, 0, pkg, 7, data_len);
         }
-        int crc = CRC16.calculate(pkg, 7+data_len);
-        pkg[7+data_len] = (byte)(crc & 0xff);
-        pkg[8+data_len] = (byte)((crc>>8) & 0xff);
+        int crc = CRC16.calculate(pkg, 7 + data_len);
+        pkg[7 + data_len] = (byte) (crc & 0xff);
+        pkg[8 + data_len] = (byte) ((crc >> 8) & 0xff);
 
-        //Log.i(TAG, "command_package "+Util.hex(pkg, pkg.length));
+//        Log.i(TAG, "command_package "+Util.hex(pkg, pkg.length));
         return pkg;
     }
 
     private static final SecureRandom seedGen = new SecureRandom();
 
     @NonNull
-    private static byte[] encrypt_package(@NonNull byte[] d){
-        final byte[] pkg = new byte[8+d.length];
+    private static byte[] encrypt_package(@NonNull byte[] d) {
+        final byte[] pkg = new byte[8 + d.length];
         final byte[] S = new byte[6];
         seedGen.nextBytes(S);
-        pkg[0] = (byte)0xDC;
-        pkg[1] = (byte)d.length;
+        pkg[0] = (byte) 0xDC;
+        pkg[1] = (byte) d.length;
         System.arraycopy(S, 0, pkg, 2, S.length);
-        for(int i=0;i<d.length;i++){
-            pkg[8+i] = map(S, i, d[i]);
+        for (int i = 0; i < d.length; i++) {
+            pkg[8 + i] = map(S, i, d[i]);
         }
         return pkg;
     }
 
-    private final static byte TRANSLATE_LEAD = (byte)0xFE;
+    private final static byte TRANSLATE_LEAD = (byte) 0xFE;
 
-    private static boolean should_translate(byte b){
-        return b == (byte)0xCD ||
-                b == (byte)0xDC ||
+    private static boolean should_translate(byte b) {
+        return b == (byte) 0xCD ||
+                b == (byte) 0xDC ||
                 b == TRANSLATE_LEAD;
     }
 
     @NonNull
-    private static byte[] translate(@NonNull byte[] d){
+    private static byte[] translate(@NonNull byte[] d) {
         int c = 0;
-        for(int i=1;i<d.length;i++){
-            if(should_translate(d[i])){
+        for (int i = 1; i < d.length; i++) {
+            if (should_translate(d[i])) {
                 c++;
             }
         }
 
-        if(c>0){
-            final byte[] pkg = new byte[d.length+c];
+        if (c > 0) {
+            final byte[] pkg = new byte[d.length + c];
             pkg[0] = d[0];
             int j = 1;
-            for(int i=1;i<d.length;i++){
-                if(should_translate(d[i])){
+            for (int i = 1; i < d.length; i++) {
+                if (should_translate(d[i])) {
                     pkg[j++] = TRANSLATE_LEAD;
-                    pkg[j++] = (byte)((int)d[i] ^ 0xff);
-                }
-                else{
+                    pkg[j++] = (byte) ((int) d[i] ^ 0xff);
+                } else {
                     pkg[j++] = d[i];
                 }
             }
             return pkg;
-        }
-        else{
+        } else {
             return d;
         }
     }
 
     @NonNull
-    public static byte[] wrapped_package(@NonNull byte[] data){
+    public static byte[] wrapped_package(@NonNull byte[] data) {
         return translate(encrypt_package(data));
     }
 
     @NonNull
-    public static byte[] get_status_package(long id){
+    public static byte[] get_status_package(long id) {
         return command_package(CMD_STATUS, id, null);
     }
 
     @NonNull
-    public static byte[] get_config_package(long id){
+    public static byte[] get_config_package(long id) {
         return command_package(CMD_CONFIG, id, null);
     }
 
     @NonNull
-    public static byte[] set_temperature_threshold_package(long id, int low, int height){
+    public static byte[] set_temperature_threshold_package(long id, int low, int height) {
         byte[] data = new byte[4];
-        data[0] = (byte)(low & 0xff);
-        data[1] = (byte)((low>>8) & 0xff);
-        data[2] = (byte)(height & 0xff);
-        data[3] = (byte)((height>>8) & 0xff);
+        data[0] = (byte) (low & 0xff);
+        data[1] = (byte) ((low >> 8) & 0xff);
+        data[2] = (byte) (height & 0xff);
+        data[3] = (byte) ((height >> 8) & 0xff);
         return command_package(CMD_SET_TEMP_THRESHOLD, id, data);
     }
 
     @NonNull
-    public static byte[] jet_package(long id, int delay, int duration, int high){
-        byte[] data= new byte[5];
-        data[0] = (byte)(delay & 0xff);
-        data[1] = (byte)((delay>>8) & 0xff);
-        data[2] = (byte)(duration & 0xff);
-        data[3] = (byte)((duration>>8) & 0xff);
-        data[4] = (byte)(high & 0xff);
+    public static byte[] jet_package(long id, int delay, int duration, int high) {
+        byte[] data = new byte[5];
+        data[0] = (byte) (delay & 0xff);
+        data[1] = (byte) ((delay >> 8) & 0xff);
+        data[2] = (byte) (duration & 0xff);
+        data[3] = (byte) ((duration >> 8) & 0xff);
+        data[4] = (byte) (high & 0xff);
         return command_package(CMD_JET, id, data);
     }
 
     @NonNull
-    public static byte[] jet_stop_package(long id){
+    public static byte[] jet_stop_package(long id) {
         return command_package(CMD_STOP_JET, id, null);
     }
 
-
     @Nullable
-    public static DeviceState parseStatus(@NonNull byte[] pkg, int pkg_len){
+    public static DeviceState parseStatus(@NonNull byte[] pkg, int pkg_len) {
         DeviceState ds = new DeviceState();
         BinaryReader reader = new BinaryReader(new ByteArrayInputStream(pkg, 0, pkg_len));
-        try{
+        try {
             reader.skip(HEADER_LEN);
             ds.mTemperature = reader.readSignedShortLSB();
-            ds.mSupplyVoltage = (float)reader.readUnsignedChar()/10;
+            ds.mSupplyVoltage = (float) reader.readUnsignedChar() / 10;
             ds.mMotorSpeed[0] = reader.readUnsignedChar();
             ds.mMotorSpeed[1] = reader.readUnsignedChar();
             ds.mMotorSpeed[2] = reader.readUnsignedChar();
@@ -316,28 +307,28 @@ public class Protocol {
             ds.mInfraredDistance = reader.readUnsignedChar();
             ds.mRestTime = reader.readUnsignedShortLSB();
             return ds;
-        }catch (IOException e){
+        } catch (IOException e) {
             return null;
         }
     }
 
     @Nullable
-    public static DeviceConfig parseConfig(@NonNull byte[] pkg, int pkg_len){
-        DeviceConfig config = new DeviceConfig();
+    public static DeviceConfig parseConfig(@NonNull byte[] pkg, int pkg_len) {
+        DeviceConfig dc = new DeviceConfig();
         BinaryReader reader = new BinaryReader(new ByteArrayInputStream(pkg, 0, pkg_len));
-        try{
+        try {
             reader.skip(HEADER_LEN);
-            config.mID = reader.readUnsignedIntLSB();
-            config.mMotorDefaultSpeed[0] = reader.readUnsignedChar();
-            config.mMotorDefaultSpeed[1] = reader.readUnsignedChar();
-            config.mMotorDefaultSpeed[2] = reader.readUnsignedChar();
-            config.mMotorDefaultSpeed[3] = reader.readUnsignedChar();
-            config.mTemperatureThresholdLow = reader.readSignedShortLSB();
-            config.mTemperatureThresholdHigh = reader.readSignedShortLSB();
-            config.mDMXAddress = reader.readUnsignedShortLSB();
-            config.mGualiaoTime = reader.readUnsignedChar();
-            return config;
-        }catch (IOException e){
+            dc.mID = reader.readUnsignedIntLSB();
+            dc.mMotorDefaultSpeed[0] = reader.readUnsignedChar();
+            dc.mMotorDefaultSpeed[1] = reader.readUnsignedChar();
+            dc.mMotorDefaultSpeed[2] = reader.readUnsignedChar();
+            dc.mMotorDefaultSpeed[3] = reader.readUnsignedChar();
+            dc.mTemperatureThresholdLow = reader.readSignedShortLSB();
+            dc.mTemperatureThresholdHigh = reader.readSignedShortLSB();
+            dc.mDMXAddress = reader.readUnsignedShortLSB();
+            dc.mGualiaoTime = reader.readUnsignedChar();
+            return dc;
+        } catch (IOException e) {
             return null;
         }
     }

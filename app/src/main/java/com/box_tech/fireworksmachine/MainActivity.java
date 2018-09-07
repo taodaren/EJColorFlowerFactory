@@ -46,34 +46,34 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         DeviceConfigFragment.OnFragmentInteractionListener,
         GroupFragment.OnFragmentInteractionListener {
     private final static String TAG = "MainActivity";
-    private final List<Device> mDeviceList = new LinkedList<>();
-    private final Map<String, ProtocolWithDevice> mProtocolList = new ArrayMap<>();
 
     private final static int ACK_TIMEOUT = 1000;
     @SuppressWarnings("SpellCheckingInspection")
-    private final static ParcelUuid UUID_GATT_SERVICE
-            = ParcelUuid.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
-    private final static UUID UUID_GATT_CHARACTERISTIC_NOTIFY
-            = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
+    private final static ParcelUuid UUID_GATT_SERVICE = ParcelUuid.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
     @SuppressWarnings("SpellCheckingInspection")
-    private final static UUID UUID_GATT_CHARACTERISTIC_WRITE
-            = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
+    private final static UUID UUID_GATT_CHARACTERISTIC_NOTIFY = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
+    @SuppressWarnings("SpellCheckingInspection")
+    private final static UUID UUID_GATT_CHARACTERISTIC_WRITE = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
 
-    private DeviceListAdapter mDeviceListAdapter;
-    private final List<String> mFoundDeviceAddressList = new LinkedList<>();
-    private ArrayAdapter<String> mFoundDeviceAddressListAdapter = null;
-    private ProgressBar mFoundDeviceProgressBar = null;
-    private long mMemberID = 0;
+    private final List<Device> mDevList = new LinkedList<>();
+    private final Map<String, ProtocolWithDevice> mProtocolMap = new ArrayMap<>();
+
+    private DeviceListAdapter mDevListAdapter;
+    private final List<String> mFoundDevAddressList = new LinkedList<>();
+    private ArrayAdapter<String> mFoundDevAddressListAdapter;
+    private ProgressBar mFoundDeviceProgressBar;
+    private long mMemberID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);// 保持常亮的屏幕的状态
+        // 保持常亮的屏幕的状态
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        mDeviceListAdapter = new DeviceListAdapter(this, mDeviceList);
-        mDeviceListAdapter.setSendCommand(this);
+        mDevListAdapter = new DeviceListAdapter(this, mDevList);
+        mDevListAdapter.setSendCommand(this);
 
         LoginSession session = Settings.getLoginSessionInfo(this);
         mMemberID = session.getMember_id();
@@ -98,16 +98,16 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         super.onDestroy();
     }
 
-    private final int[] category_id = new int[]{
-            R.id.category_device,
-            R.id.category_control,
-            R.id.category_shop,
-            R.id.category_my
+    private final int[] mTabId = new int[]{
+            R.id.tab_device,
+            R.id.tab_control,
+            R.id.tab_shop,
+            R.id.tab_my
     };
 
     private void setupCategoryClick() {
-        for (int i = 0; i < category_id.length; i++) {
-            TextView tv = findViewById(category_id[i]);
+        for (int i = 0; i < mTabId.length; i++) {
+            TextView tv = findViewById(mTabId[i]);
             final int position = i;
             tv.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -122,8 +122,8 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
     private final ViewPager.OnPageChangeListener mPageChangeListener = new ViewPager.SimpleOnPageChangeListener() {
         @Override
         public void onPageSelected(int position) {
-            for (int i = 0; i < category_id.length; i++) {
-                TextView tv = findViewById(category_id[i]);
+            for (int i = 0; i < mTabId.length; i++) {
+                TextView tv = findViewById(mTabId[i]);
                 tv.setSelected(i == position);
             }
         }
@@ -133,14 +133,14 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
     @Override
     public void scanDevice() {
         refresh();
-        if (mDeviceList.isEmpty()) {
+        if (mDevList.isEmpty()) {
             showDeviceAddressSelectDialog();
         }
     }
 
     @Override
     public DeviceListAdapter getDeviceListAdapter() {
-        return mDeviceListAdapter;
+        return mDevListAdapter;
     }
 
     @Override
@@ -157,8 +157,8 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
     private void showDeviceAddressSelectDialog() {
         final View view = View.inflate(this, R.layout.device_list_dialog, null);
         final ListView lv = view.findViewById(R.id.lv_device_list);
-        mFoundDeviceAddressListAdapter = new ArrayAdapter<String>(this,
-                R.layout.device_address_item, R.id.tv_device_address, mFoundDeviceAddressList) {
+        mFoundDevAddressListAdapter = new ArrayAdapter<String>(this,
+                R.layout.device_address_item, R.id.tv_device_address, mFoundDevAddressList) {
             @NonNull
             @Override
             public View getView(final int position, @Nullable View convertView, @NonNull ViewGroup parent) {
@@ -176,7 +176,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
             }
         };
         lv.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-        lv.setAdapter(mFoundDeviceAddressListAdapter);
+        lv.setAdapter(mFoundDevAddressListAdapter);
         mFoundDeviceProgressBar = view.findViewById(R.id.pb_refresh_progress);
 
         mSelectDialog = new AlertDialog.Builder(MainActivity.this, THEME_HOLO_DARK)
@@ -186,22 +186,22 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         SparseBooleanArray selected_array = lv.getCheckedItemPositions();
-                        for (int i = 0; i < mFoundDeviceAddressList.size(); i++) {
+                        for (int i = 0; i < mFoundDevAddressList.size(); i++) {
                             if (selected_array.get(i)) {
-                                Log.i(TAG, "select " + mFoundDeviceAddressList.get(i));
-                                add_device(mFoundDeviceAddressList.get(i), 0);
+                                Log.i(TAG, "select " + mFoundDevAddressList.get(i));
+                                addDevice(mFoundDevAddressList.get(i), 0);
                             } else {
-                                Log.i(TAG, "not select " + mFoundDeviceAddressList.get(i));
+                                Log.i(TAG, "not select " + mFoundDevAddressList.get(i));
                             }
                         }
-                        mFoundDeviceAddressListAdapter = null;
+                        mFoundDevAddressListAdapter = null;
                         mFoundDeviceProgressBar = null;
                     }
                 })
                 .setNegativeButton("取消", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        mFoundDeviceAddressListAdapter = null;
+                        mFoundDevAddressListAdapter = null;
                         mFoundDeviceProgressBar = null;
                     }
                 })
@@ -210,7 +210,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
     }
 
     @Override
-    protected void onStopScan() {
+    protected void stopScan() {
         if (mFoundDeviceProgressBar != null) {
             mFoundDeviceProgressBar.setVisibility(View.GONE);
             mFoundDeviceProgressBar = null;
@@ -230,7 +230,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mDeviceListAdapter.notifyDataSetChanged();
+                    mDevListAdapter.notifyDataSetChanged();
                 }
             });
         }
@@ -241,7 +241,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mDeviceListAdapter.notifyDataSetChanged();
+                    mDevListAdapter.notifyDataSetChanged();
                 }
             });
         }
@@ -267,57 +267,57 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
     }
 
     @Override
-    public void set_registered_device(GetDeviceList.Result.DeviceInformation[] list) {
+    public void setRegisteredDevice(GetDeviceList.Result.DeviceInformation[] list) {
         List<String> rm = new LinkedList<>();
         List<Device> rmd = new LinkedList<>();
-        for (String mac : mProtocolList.keySet()) {
+        for (String mac : mProtocolMap.keySet()) {
             if (!contain(list, mac)) {
                 rm.add(mac);
                 rmd.add(getDevice(mac));
             }
         }
         for (String mac : rm) {
-            mProtocolList.remove(mac);
+            mProtocolMap.remove(mac);
         }
         for (Device d : rmd) {
-            mDeviceList.remove(d);
+            mDevList.remove(d);
         }
 
         for (GetDeviceList.Result.DeviceInformation d : list) {
-            add_device(d.getMac(), d.getId());
+            addDevice(d.getMac(), d.getId());
         }
     }
 
-    private void add_device(final String mac, long id) {
-        if (!mProtocolList.containsKey(mac)) {
+    private void addDevice(final String mac, long id) {
+        if (!mProtocolMap.containsKey(mac)) {
             final Device d = new Device(mac);
             d.setId(id);
-            mDeviceList.add(d);
-            mDeviceListAdapter.notifyDataSetChanged();
-            addDevice(mac);
-            mProtocolList.put(mac, new ProtocolWithDevice(d));
+            mDevList.add(d);
+            mDevListAdapter.notifyDataSetChanged();
+            addDeviceByMac(mac);
+            mProtocolMap.put(mac, new ProtocolWithDevice(d));
         }
     }
 
     @Override
-    protected void onFoundDevice(final BluetoothDevice device, @Nullable List<ParcelUuid> serviceUuids) {
+    protected void foundDevice(final BluetoothDevice device, @Nullable List<ParcelUuid> serviceUuids) {
         String name = device.getName();
         String mac = device.getAddress();
         if (name.indexOf("EEJING-CHJ") != 0) {
             return;
         }
-        if (mFoundDeviceAddressListAdapter != null) {
-            if (!mFoundDeviceAddressList.contains(mac)) {
-                mFoundDeviceAddressList.add(mac);
-                mFoundDeviceAddressListAdapter.notifyDataSetChanged();
+        if (mFoundDevAddressListAdapter != null) {
+            if (!mFoundDevAddressList.contains(mac)) {
+                mFoundDevAddressList.add(mac);
+                mFoundDevAddressListAdapter.notifyDataSetChanged();
             }
         }
-        //super.onFoundDevice(device, serviceUuids);
+//        super.foundDevice(device, serviceUuids);
     }
 
-    //private boolean getStatusFlag = true;
+//    private boolean getStatusFlag = true;
     private Device getDevice(String mac) {
-        for (Device device : mDeviceList) {
+        for (Device device : mDevList) {
             if (device.getAddress().equals(mac)) {
                 return device;
             }
@@ -325,7 +325,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         return null;
     }
 
-    private boolean mRequestConfig = false;
+    private boolean mRequestConfig;
 
     @Override
     protected void onDeviceReady(final String mac) {
@@ -333,7 +333,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
             Device device = getDevice(mac);
             if (device != null) {
                 device.setConnected(true);
-                mDeviceListAdapter.notifyDataSetChanged();
+                mDevListAdapter.notifyDataSetChanged();
             }
             registerRefreshStatus(mac);
         }
@@ -343,7 +343,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         registerPeriod(mac + "-status", new Runnable() {
                     @Override
                     public void run() {
-                        ProtocolWithDevice pd = mProtocolList.get(mac);
+                        ProtocolWithDevice pd = mProtocolMap.get(mac);
                         if (pd == null) {
                             return;
                         }
@@ -369,7 +369,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         Device device = getDevice(mac);
         if (device != null) {
             device.setConnected(true);
-            mDeviceListAdapter.notifyDataSetChanged();
+            mDevListAdapter.notifyDataSetChanged();
         } else {
             Log.i(TAG, "onDeviceConnect no device");
         }
@@ -382,14 +382,14 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
         Device device = getDevice(mac);
         if (device != null) {
             device.setConnected(false);
-            mDeviceListAdapter.notifyDataSetChanged();
+            mDevListAdapter.notifyDataSetChanged();
         }
     }
 
     @Override
     protected void onReceive(String mac, byte[] data) {
         super.onReceive(mac, data);
-        Protocol p = mProtocolList.get(mac);
+        Protocol p = mProtocolMap.get(mac);
         if (p != null) {
             p.onReceive(data);
         }
@@ -398,7 +398,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
     @Override
     public void sendCommand(@NonNull Device device, @NonNull byte[] pkg) {
         String mac = device.getAddress();
-        Protocol p = mProtocolList.get(mac);
+        Protocol p = mProtocolMap.get(mac);
         if (p != null) {
             send(device.getAddress(), pkg, true);
             mRequestConfig = true;

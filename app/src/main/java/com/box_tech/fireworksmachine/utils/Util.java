@@ -3,7 +3,6 @@ package com.box_tech.fireworksmachine.utils;
 import java.util.Locale;
 
 /**
- * Created by scc on 2018/3/8.
  * 工具类
  */
 

@@ -1,6 +1,5 @@
 package com.box_tech.fireworksmachine;
 
-
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
@@ -10,13 +9,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class MyLifecycleHandler implements Application.ActivityLifecycleCallbacks {
-    // I use four separate variables here. You can, of course, just use two and
-    // increment/decrement them instead of using four and incrementing them all.
+    // 我在这里使用了四个独立的变量,当然，您可以使用两个并递增/递减它们，而不是使用四个并递增它们。
     private static int resumed;
     private static int paused;
     private static int started;
     private static int stopped;
-    private static boolean foreground = false;
+    private static boolean foreground;
     private static final List<OnForegroundStateChangeListener> foregroundStateChangesList = new LinkedList<>();
 
     @Override
@@ -43,7 +41,6 @@ public class MyLifecycleHandler implements Application.ActivityLifecycleCallback
     public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
     }
 
-
     @Override
     public void onActivityStarted(Activity activity) {
         ++started;
@@ -55,13 +52,13 @@ public class MyLifecycleHandler implements Application.ActivityLifecycleCallback
         android.util.Log.w("test", "application is visible: " + (started > stopped));
     }
 
-
-    private static void checkForegroundChange(){
+    /** 校验新的状态变化 */
+    private static void checkForegroundChange() {
         boolean old = foreground;
-        if(old != isApplicationInForeground()){
-            foreground = ! old;
-            synchronized (foregroundStateChangesList){
-                for(OnForegroundStateChangeListener listener : foregroundStateChangesList){
+        if (old != isApplicationInForeground()) {
+            foreground = !old;
+            synchronized (foregroundStateChangesList) {
+                for (OnForegroundStateChangeListener listener : foregroundStateChangesList) {
                     listener.onStateChanged(foreground);
                 }
             }
@@ -70,28 +67,29 @@ public class MyLifecycleHandler implements Application.ActivityLifecycleCallback
 
     public interface OnForegroundStateChangeListener {
         /**
-         *  APP切换到了后台或切换到前台
+         * APP 切换到了后台或切换到前台
+         *
          * @param foreground 新的状态
          */
         void onStateChanged(boolean foreground);
     }
 
-    public static void addListener(@NonNull OnForegroundStateChangeListener listener){
-        synchronized (foregroundStateChangesList){
+    public static void addListener(@NonNull OnForegroundStateChangeListener listener) {
+        synchronized (foregroundStateChangesList) {
             foregroundStateChangesList.add(listener);
         }
     }
 
-    public static void removeListener(@NonNull OnForegroundStateChangeListener listener){
-        synchronized (foregroundStateChangesList){
+    public static void removeListener(@NonNull OnForegroundStateChangeListener listener) {
+        synchronized (foregroundStateChangesList) {
             foregroundStateChangesList.remove(listener);
         }
     }
 
     // And these two public static functions
-    //public static boolean isApplicationVisible() {
-    //    return started > stopped;
-    //}
+    public static boolean isApplicationVisible() {
+        return started > stopped;
+    }
 
     public static boolean isApplicationInForeground() {
         return resumed > paused;

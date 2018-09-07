@@ -18,7 +18,6 @@ import com.box_tech.fireworksmachine.Settings;
 import com.box_tech.fireworksmachine.device.DeviceListAdapter;
 import com.box_tech.fireworksmachine.device.Server.GetDeviceList;
 import com.box_tech.fireworksmachine.login.LoginSession;
-import com.box_tech.fireworksmachine.utils.GeneralResult;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -109,12 +108,12 @@ public class DeviceConfigFragment extends Fragment {
     }
 
     private void onGetDeviceListFromServer(GetDeviceList.Result.DeviceInformation[] list){
-        mListener.set_registered_device(list);
+        mListener.setRegisteredDevice(list);
     }
 
     public interface OnFragmentInteractionListener {
         void scanDevice();
         DeviceListAdapter getDeviceListAdapter();
-        void set_registered_device(GetDeviceList.Result.DeviceInformation[] list);
+        void setRegisteredDevice(GetDeviceList.Result.DeviceInformation[] list);
     }
 }

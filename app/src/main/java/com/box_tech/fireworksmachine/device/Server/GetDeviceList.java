@@ -6,7 +6,6 @@ import com.box_tech.fireworksmachine.Settings;
 import com.box_tech.fireworksmachine.utils.GeneralRequest;
 
 /**
- * Created by scc on 2018/3/15.
  * 获取设备列表
  */
 
