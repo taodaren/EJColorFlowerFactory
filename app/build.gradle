@@ -6,8 +6,8 @@ android {
         applicationId "com.box_tech.fireworksmachine.tester"
         minSdkVersion 21
         targetSdkVersion 27
-        versionCode getGitVersionCode()
-        versionName "${getGitVersion()}"
+        versionCode 1
+        versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -34,26 +34,6 @@ android {
             includeAndroidResources = true
         }
     }
-}
-
-task showVersions{
-    println("showVersions "+getGitVersion())
-}
-
-static def getGitVersion() {
-    def ver = 'git describe --tags --abbrev=4'.execute().text.trim()
-    def s = ver.split("-")
-    if (s.length == 1){
-        return s[0]+".0.latest"
-    }
-    else if(s.length == 2){
-        return s[0]+".0.latest."+s[1]
-    }
-    return s[0]+"."+s[2]+"."+s[3]+"."+s[1]
-}
-
-static def getGitVersionCode() {
-    return Integer.parseInt('git rev-list HEAD --count'.execute().text.trim())
 }
 
 dependencies {

@@ -20,59 +20,57 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-
 /**
- * Created by scc on 2018/3/5.
  * Device View
  */
 
-public class DeviceView extends LinearLayout implements View.OnClickListener{
+public class DeviceView extends LinearLayout implements View.OnClickListener {
     private Device mDevice;
     private ISendCommand mSendCommand = null;
     Handler handler;
 
-    public DeviceView(Context context){
+    public DeviceView(Context context) {
         super(context);
         initView(context);
     }
-    public DeviceView(Context context, AttributeSet attrs){
+
+    public DeviceView(Context context, AttributeSet attrs) {
         super(context, attrs);
         initView(context);
     }
-    public DeviceView(Context context, AttributeSet attrs, int defaultStyle){
+
+    public DeviceView(Context context, AttributeSet attrs, int defaultStyle) {
         super(context, attrs, defaultStyle);
         initView(context);
     }
 
-    private void initView(Context context){
+    private void initView(Context context) {
         handler = new Handler();
         LayoutInflater.from(context).inflate(R.layout.device_view, this);
         setupClickListeners(this);
     }
 
-    public void setDevice(Device device){
+    public void setDevice(Device device) {
         mDevice = device;
         updateView(this);
     }
 
-    private void updateView(View root){
+    private void updateView(View root) {
         // 更新温度
         final String temperature, temperatureL, temperatureH;
-        if(mDevice!=null && mDevice.state != null){
-            temperature = String.format(Locale.US,"%d", mDevice.state.mTemperature);
-        }
-        else{
+        if (mDevice != null && mDevice.state != null) {
+            temperature = String.format(Locale.US, "%d", mDevice.state.mTemperature);
+        } else {
             temperature = "???";
         }
-        if(mDevice!=null && mDevice.config != null){
-            temperatureL = String.format(Locale.US,"%d", mDevice.config.mTemperatureThresholdLow);
-            temperatureH = String.format(Locale.US,"%d", mDevice.config.mTemperatureThresholdHigh);
-        }
-        else{
+        if (mDevice != null && mDevice.config != null) {
+            temperatureL = String.format(Locale.US, "%d", mDevice.config.mTemperatureThresholdLow);
+            temperatureH = String.format(Locale.US, "%d", mDevice.config.mTemperatureThresholdHigh);
+        } else {
             temperatureL = "???";
             temperatureH = "???";
         }
-        ((TextView)root.findViewById(R.id.tv_temperature)).setText(String.format(Locale.US, "%s/%s~%s", temperature, temperatureL, temperatureH));
+        ((TextView) root.findViewById(R.id.tv_temperature)).setText(String.format(Locale.US, "%s/%s~%s", temperature, temperatureL, temperatureH));
 
         // 更新电机1~4速度
         final int[] motor_id = new int[]{
@@ -81,80 +79,75 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
                 R.id.tv_motor_speed_3,
                 R.id.tv_motor_speed_4};
 
-        for(int i = 0; i<motor_id.length; i++ ){
+        for (int i = 0; i < motor_id.length; i++) {
             final String speed, default_speed;
-            if(mDevice!=null && mDevice.state != null){
-                speed = String.format(Locale.US,"%d", mDevice.state.mMotorSpeed[i]);
-            }
-            else{
+            if (mDevice != null && mDevice.state != null) {
+                speed = String.format(Locale.US, "%d", mDevice.state.mMotorSpeed[i]);
+            } else {
                 speed = "??";
             }
-            if(mDevice!=null && mDevice.config != null){
-                default_speed = String.format(Locale.US,"%d",
+            if (mDevice != null && mDevice.config != null) {
+                default_speed = String.format(Locale.US, "%d",
                         mDevice.config.mMotorDefaultSpeed[i]);
-            }
-            else{
+            } else {
                 default_speed = "??";
             }
 
-            ((TextView)root.findViewById(motor_id[i])).setText(
+            ((TextView) root.findViewById(motor_id[i])).setText(
                     String.format(Locale.US, "%s/%s", speed, default_speed));
         }
 
-        if(mDevice == null || mDevice.state ==null){
-            ((TextView)root.findViewById(R.id.tv_supply_voltage)).setText("??");
-            ((TextView)root.findViewById(R.id.tv_pitch)).setText("??");
-            ((TextView)root.findViewById(R.id.tv_ultrasonic_distance)).setText("?.?");
-            ((TextView)root.findViewById(R.id.tv_infrared_distance)).setText("?.?");
-            ((TextView)root.findViewById(R.id.tv_rest_time)).setText("??");
-        }
-        else{
-            ((TextView)root.findViewById(R.id.tv_supply_voltage)).setText(String.format(Locale.US,"%.0f", mDevice.state.mSupplyVoltage*10));
-            ((TextView)root.findViewById(R.id.tv_pitch)).setText(String.format(Locale.US,"%d", mDevice.state.mPitch));
-            ((TextView)root.findViewById(R.id.tv_ultrasonic_distance)).setText(String.format(Locale.US,"%.1f", mDevice.state.mUltrasonicDistance/10.0));
-            ((TextView)root.findViewById(R.id.tv_infrared_distance)).setText(String.format(Locale.US,"%.1f", mDevice.state.mInfraredDistance/10.0));
-            ((TextView)root.findViewById(R.id.tv_rest_time)).setText(mDevice.state.strOfRestTime());
+        if (mDevice == null || mDevice.state == null) {
+            ((TextView) root.findViewById(R.id.tv_supply_voltage)).setText("??");
+            ((TextView) root.findViewById(R.id.tv_pitch)).setText("??");
+            ((TextView) root.findViewById(R.id.tv_ultrasonic_distance)).setText("?.?");
+            ((TextView) root.findViewById(R.id.tv_infrared_distance)).setText("?.?");
+            ((TextView) root.findViewById(R.id.tv_rest_time)).setText("??");
+        } else {
+            ((TextView) root.findViewById(R.id.tv_supply_voltage)).setText(String.format(Locale.US, "%.0f", mDevice.state.mSupplyVoltage * 10));
+            ((TextView) root.findViewById(R.id.tv_pitch)).setText(String.format(Locale.US, "%d", mDevice.state.mPitch));
+            ((TextView) root.findViewById(R.id.tv_ultrasonic_distance)).setText(String.format(Locale.US, "%.1f", mDevice.state.mUltrasonicDistance / 10.0));
+            ((TextView) root.findViewById(R.id.tv_infrared_distance)).setText(String.format(Locale.US, "%.1f", mDevice.state.mInfraredDistance / 10.0));
+            ((TextView) root.findViewById(R.id.tv_rest_time)).setText(mDevice.state.strOfRestTime());
         }
 
-        if(mDevice == null || mDevice.config ==null){
-            ((TextView)root.findViewById(R.id.tv_dmx_addr)).setText("???");
-            ((TextView)root.findViewById(R.id.tv_device_id)).setText("?????");
-            ((TextView)root.findViewById(R.id.tv_gualiao_time)).setText("??.?");
-        }
-        else{
-            ((TextView)root.findViewById(R.id.tv_dmx_addr)).setText(String.format(Locale.US,"%d", mDevice.config.mDMXAddress));
-            ((TextView)root.findViewById(R.id.tv_device_id)).setText(String.format(Locale.US,"%d", mDevice.config.mID));
-            ((TextView)root.findViewById(R.id.tv_gualiao_time)).setText(String.format(Locale.US, "%.1f", mDevice.config.mGualiaoTime /10.0));
+        if (mDevice == null || mDevice.config == null) {
+            ((TextView) root.findViewById(R.id.tv_dmx_addr)).setText("???");
+            ((TextView) root.findViewById(R.id.tv_device_id)).setText("?????");
+            ((TextView) root.findViewById(R.id.tv_gualiao_time)).setText("??.?");
+        } else {
+            ((TextView) root.findViewById(R.id.tv_dmx_addr)).setText(String.format(Locale.US, "%d", mDevice.config.mDMXAddress));
+            ((TextView) root.findViewById(R.id.tv_device_id)).setText(String.format(Locale.US, "%d", mDevice.config.mID));
+            ((TextView) root.findViewById(R.id.tv_gualiao_time)).setText(String.format(Locale.US, "%.1f", mDevice.config.mGualiaoTime / 10.0));
         }
     }
 
     private final static Map<Integer, Integer> mButton2Layout = new ArrayMap<>();
-    static{
+
+    static {
         mButton2Layout.put(R.id.bt_edit_temperature_threshold, R.layout.edit_temperature_threshold);
     }
 
-
-    private void setupClickListeners(final View root){
-        for(int id : mButton2Layout.keySet()){
+    private void setupClickListeners(final View root) {
+        for (int id : mButton2Layout.keySet()) {
             root.findViewById(id).setOnClickListener(this);
         }
 
         root.findViewById(R.id.bt_jet).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if( mDevice == null || mDevice.getConfig() == null || mSendCommand == null ){
+                if (mDevice == null || mDevice.getConfig() == null || mSendCommand == null) {
                     Toast.makeText(v.getContext(), "暂时无法编辑", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
                 final long device_id = mDevice.getConfig().mID;
 
-                if(mDevice.getState().mRestTime == 0){
+                if (mDevice.getState().mRestTime == 0) {
                     Toast.makeText(v.getContext(), "没有剩余时间", Toast.LENGTH_SHORT).show();
-                }
-                else{
+                } else {
                     mSendCommand.sendCommand(mDevice,
-                            Protocol.jet_package(device_id, 0, 10*600, 100));
+                            Protocol.jet_package(device_id, 0, 10 * 600, 100));
                 }
             }
         });
@@ -164,7 +157,7 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
             @Override
             public void onClick(View v) {
 
-                if( mDevice == null || mDevice.getConfig() == null || mSendCommand == null ){
+                if (mDevice == null || mDevice.getConfig() == null || mSendCommand == null) {
                     Toast.makeText(v.getContext(), "暂时无法编辑", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -176,13 +169,13 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
         });
     }
 
-    private void onClickSetupView(int id, final View editView){
-        switch (id){
+    private void onClickSetupView(int id, final View editView) {
+        switch (id) {
             case R.id.bt_edit_temperature_threshold:
                 WheelView etLow = editView.findViewById(R.id.et_temperature_threshold_low);
                 WheelView etHeight = editView.findViewById(R.id.et_temperature_threshold_high);
                 final List<String> values = new LinkedList<>();
-                for(int t = 400; t <= 700; t ++ ){
+                for (int t = 400; t <= 700; t++) {
                     values.add(String.valueOf(t));
                 }
                 etLow.setItems(values);
@@ -194,35 +187,35 @@ public class DeviceView extends LinearLayout implements View.OnClickListener{
         }
     }
 
-    private void onSetValue(int id, final View editView){
-        if(mDevice==null){
+    private void onSetValue(int id, final View editView) {
+        if (mDevice == null) {
             return;
         }
         final long device_id = mDevice.getConfig().mID;
-        switch (id){
+        switch (id) {
             case R.id.bt_edit_temperature_threshold:
                 WheelView etLow = editView.findViewById(R.id.et_temperature_threshold_low);
                 WheelView etHigh = editView.findViewById(R.id.et_temperature_threshold_high);
                 int low = Integer.parseInt(etLow.getItems().get(etLow.getSelectedPosition()));
                 int high = Integer.parseInt(etHigh.getItems().get(etHigh.getSelectedPosition()));
-                if(low>high){
+                if (low > high) {
                     int t = low;
                     low = high;
                     high = t;
                 }
                 byte[] pkg = Protocol.set_temperature_threshold_package(device_id, low, high);
-                if(mSendCommand!=null) mSendCommand.sendCommand(mDevice, pkg);
+                if (mSendCommand != null) mSendCommand.sendCommand(mDevice, pkg);
                 break;
         }
     }
 
-    void setOnSendCommand(ISendCommand impl){
+    void setOnSendCommand(ISendCommand impl) {
         mSendCommand = impl;
     }
 
     @Override
-    public void onClick(View view){
-        if( mDevice == null || mDevice.getConfig() == null || mSendCommand == null ){
+    public void onClick(View view) {
+        if (mDevice == null || mDevice.getConfig() == null || mSendCommand == null) {
             Toast.makeText(view.getContext(), "暂时无法编辑", Toast.LENGTH_SHORT).show();
             return;
         }
