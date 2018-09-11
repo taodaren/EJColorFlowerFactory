@@ -48,12 +48,9 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
     private final static String TAG = "MainActivity";
 
     private final static int ACK_TIMEOUT = 1000;
-    @SuppressWarnings("SpellCheckingInspection")
-    private final static ParcelUuid UUID_GATT_SERVICE = ParcelUuid.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
-    @SuppressWarnings("SpellCheckingInspection")
-    private final static UUID UUID_GATT_CHARACTERISTIC_NOTIFY = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
-    @SuppressWarnings("SpellCheckingInspection")
-    private final static UUID UUID_GATT_CHARACTERISTIC_WRITE = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
+    @SuppressWarnings("SpellCheckingInspection") private final static ParcelUuid UUID_GATT_SERVICE = ParcelUuid.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
+    @SuppressWarnings("SpellCheckingInspection") private final static UUID UUID_GATT_CHARACTERISTIC_NOTIFY = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
+    @SuppressWarnings("SpellCheckingInspection") private final static UUID UUID_GATT_CHARACTERISTIC_WRITE = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
 
     private final List<Device> mDevList = new LinkedList<>();
     private final Map<String, ProtocolWithDevice> mProtocolMap = new ArrayMap<>();
@@ -268,34 +265,34 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
 
     @Override
     public void setRegisteredDevice(GetDeviceList.Result.DeviceInformation[] list) {
-        List<String> rm = new LinkedList<>();
-        List<Device> rmd = new LinkedList<>();
+        List<String> rmMacList = new LinkedList<>();
+        List<Device> rmDevList = new LinkedList<>();
         for (String mac : mProtocolMap.keySet()) {
             if (!contain(list, mac)) {
-                rm.add(mac);
-                rmd.add(getDevice(mac));
+                rmMacList.add(mac);
+                rmDevList.add(getDevice(mac));
             }
         }
-        for (String mac : rm) {
+        for (String mac : rmMacList) {
             mProtocolMap.remove(mac);
         }
-        for (Device d : rmd) {
-            mDevList.remove(d);
+        for (Device dev : rmDevList) {
+            mDevList.remove(dev);
         }
 
-        for (GetDeviceList.Result.DeviceInformation d : list) {
-            addDevice(d.getMac(), d.getId());
+        for (GetDeviceList.Result.DeviceInformation dev : list) {
+            addDevice(dev.getMac(), dev.getId());
         }
     }
 
     private void addDevice(final String mac, long id) {
         if (!mProtocolMap.containsKey(mac)) {
-            final Device d = new Device(mac);
-            d.setId(id);
-            mDevList.add(d);
+            final Device dev = new Device(mac);
+            dev.setId(id);
+            mDevList.add(dev);
             mDevListAdapter.notifyDataSetChanged();
             addDeviceByMac(mac);
-            mProtocolMap.put(mac, new ProtocolWithDevice(d));
+            mProtocolMap.put(mac, new ProtocolWithDevice(dev));
         }
     }
 
@@ -341,24 +338,23 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
 
     private void registerRefreshStatus(final String mac) {
         registerPeriod(mac + "-status", new Runnable() {
-                    @Override
-                    public void run() {
-                        ProtocolWithDevice pd = mProtocolMap.get(mac);
-                        if (pd == null) {
-                            return;
-                        }
-                        Device device = getDevice(mac);
-                        if (device != null) {
-                            DeviceConfig config = device.getConfig();
-                            long id = (config == null) ? 0 : config.mID;
-                            if (config == null || mRequestConfig) {
-                                mRequestConfig = !send(mac, Protocol.get_config_package(id), true);
-                            }
-                            send(mac, Protocol.get_status_package(id), true);
-                        }
+            @Override
+            public void run() {
+                ProtocolWithDevice pd = mProtocolMap.get(mac);
+                if (pd == null) {
+                    return;
+                }
+                Device device = getDevice(mac);
+                if (device != null) {
+                    DeviceConfig config = device.getConfig();
+                    long id = (config == null) ? 0 : config.mID;
+                    if (config == null || mRequestConfig) {
+                        mRequestConfig = !send(mac, Protocol.get_config_package(id), true);
                     }
-                },
-                1000);
+                    send(mac, Protocol.get_status_package(id), true);
+                }
+            }
+        }, 2000);
     }
 
     @Override
