@@ -297,7 +297,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
     }
 
     @Override
-    protected void foundDevice(final BluetoothDevice device, @Nullable List<ParcelUuid> serviceUuids) {
+    protected void onFoundDevice(final BluetoothDevice device, @Nullable List<ParcelUuid> serviceUuids) {
         String name = device.getName();
         String mac = device.getAddress();
         if (name.indexOf("EEJING-CHJ") != 0) {
@@ -309,7 +309,7 @@ public class MainActivity extends BLEManagerActivity implements ISendCommand,
                 mFoundDevAddressListAdapter.notifyDataSetChanged();
             }
         }
-//        super.foundDevice(device, serviceUuids);
+//        super.onFoundDevice(device, serviceUuids);
     }
 
 //    private boolean getStatusFlag = true;

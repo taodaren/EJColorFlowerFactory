@@ -42,6 +42,7 @@ import com.yanzhenjie.permission.Rationale;
 import com.yanzhenjie.permission.RequestExecutor;
 import com.yanzhenjie.permission.SettingService;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -54,6 +55,7 @@ import java.util.UUID;
 
 public class BLEManagerActivity extends AppCompatActivity {
     private static final String TAG = "BLEManagerActivity";
+    private static final String BLE_DEV_NAME = "EEJING-CHJ";
     private static final int MAX_BLUETOOTH_SEND_PKG_LEN = 18;        // 蓝牙发送包的最大长度
     private static final int REQUEST_ENABLE_BT = 38192;              // 请求启用蓝牙
     private static final int REFRESHING_PERIOD = 60 * 1000;          // 刷新周期
@@ -65,12 +67,49 @@ public class BLEManagerActivity extends AppCompatActivity {
     private long mNextRefreshingTime;                                // 下一次刷新时间
     private List<ScanFilter> mScanFilterList;                        // 扫描过滤器
     private ScanSettings mScanSettings;                              // BLE 扫描设置
-    private BluetoothAdapter mBleAdapter;
-    private BluetoothLeScanner mBleLeScanner;
+    private BluetoothAdapter mBleAdapter;                            // 本地设备蓝牙适配器
+    private BluetoothLeScanner mBleLeScanner;                        // 提供了为 BLE 设备执行扫描相关操作的方法
     private Handler mHandler;
+    private Map<String, DeviceManager> mDevMgrSet;                   // 已经连接到的设备
+    private List<String> mAllowedConnectDevicesMAC;                  // 允许连接（通过 MAC 地址）的设备集合
+    private String mAllowedConnectDevicesName;                       // 允许连接的设备名称
 
     // 运行周期
     private final Map<String, Pair<Runnable, Integer>> mPeriodRunMap = new ArrayMap<>();
+
+
+    /** 配置当前 APP 处理的蓝牙设备名称 */
+    private void setAllowedConnDevName(String name) {
+        mAllowedConnectDevicesName = name;
+    }
+
+    /** 设置允许连接设备管理(通过 MAC) */
+    public void setAllowedConnectDevicesMAC(List<String> newMacs) {
+        mAllowedConnectDevicesMAC = newMacs;
+        removeConnectedMoreDevice();
+    }
+
+    public void clearAllowedConnectDevicesMAC() {
+        mAllowedConnectDevicesMAC.clear();
+    }
+
+    public void addAllowedConnectDevicesMAC(String newMac) {
+        mAllowedConnectDevicesMAC.add(newMac);
+    }
+
+    /** 更新允许连接的设备 MAC 地址列表后，删除已经连接的不在列表中多余的设备 */
+    public void removeConnectedMoreDevice() {
+        // 判断已经连接的数据
+        for (DeviceManager mgr : mDevMgrSet.values()) {
+            // 如果已连接的设备不在 AllowedConnectDevicesMAC 中，断开设备连接
+            if (!mAllowedConnectDevicesMAC.contains(mgr.mac)) {
+                if (mgr.gatt != null && mgr.isConnected) {
+                    mgr.gatt.disconnect(); // 断开连接
+                }
+                mDevMgrSet.remove(mgr.mac);
+            }
+        }
+    }
 
     /**
      * 设备管理类
@@ -106,11 +145,12 @@ public class BLEManagerActivity extends AppCompatActivity {
         }
     }
 
-    private final Map<String, DeviceManager> mDevMgrMap = new ArrayMap<>();
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setAllowedConnDevName(BLE_DEV_NAME);
+        mDevMgrSet = new ArrayMap<>();
+        mAllowedConnectDevicesMAC = new ArrayList<>();
 
         // 添加校验新的状态变化监听
         MyLifecycleHandler.addListener(mOnForegroundStateChangeListener);
@@ -188,7 +228,7 @@ public class BLEManagerActivity extends AppCompatActivity {
         if (mIsShutdown) {
             return;
         }
-        for (DeviceManager mgr : mDevMgrMap.values()) {
+        for (DeviceManager mgr : mDevMgrSet.values()) {
             if (mgr.isConnected && mgr.characteristicList == null && !mgr.isDiscovering) {
                 Log.i(TAG, "discovering services " + mgr.mac);
                 mgr.isDiscovering = mgr.gatt.discoverServices();
@@ -378,9 +418,9 @@ public class BLEManagerActivity extends AppCompatActivity {
             Log.i(TAG, "onScanResult " + callbackType + " " + mac + " | " + result.getDevice().getName());
             if (callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES) {
                 // 如果回调类型全部匹配
-                if (!mDevMgrMap.containsKey(mac)) {
+                if (!mDevMgrSet.containsKey(mac)) {
                     ScanRecord record = result.getScanRecord();
-                    foundDevice(result.getDevice(), (record == null) ? null : record.getServiceUuids());
+                    onFoundDevice(result.getDevice(), (record == null) ? null : record.getServiceUuids());
                 }
             }
         }
@@ -392,9 +432,9 @@ public class BLEManagerActivity extends AppCompatActivity {
             for (ScanResult result : results) {
                 String mac = result.getDevice().getAddress();
                 Log.i(TAG, "onScanResult " + " " + mac + " | " + result.getDevice().getName());
-                if (!mDevMgrMap.containsKey(mac)) {
+                if (!mDevMgrSet.containsKey(mac)) {
                     ScanRecord record = result.getScanRecord();
-                    foundDevice(result.getDevice(), (record == null) ? null : record.getServiceUuids());
+                    onFoundDevice(result.getDevice(), (record == null) ? null : record.getServiceUuids());
                 }
             }
         }
@@ -406,24 +446,36 @@ public class BLEManagerActivity extends AppCompatActivity {
         }
     };
 
-    void foundDevice(BluetoothDevice bleDevice, @Nullable List<ParcelUuid> serviceUuids) {
-        Log.i(TAG, "onFoundDevice " + bleDevice.toString() + " | " + bleDevice.getName());
+    void onFoundDevice(BluetoothDevice bleDevice, @Nullable List<ParcelUuid> serviceUuids) {
+        String name = bleDevice.getName();
+        String mac = bleDevice.getAddress();
+        Log.i(TAG, "onFoundDevice " + mac + " | " + name);
+
         if (serviceUuids != null) {
             for (ParcelUuid uuid : serviceUuids) {
                 Log.i(TAG, "   ==> service " + uuid.toString());
             }
         }
-        addDeviceByObject(bleDevice);
+
+        // 通过设备广播名称，判断是否为配置的设备
+        if (name.indexOf(mAllowedConnectDevicesName) != 0) {
+            return;
+        }
+
+        // 是否与服务器 MAC 地址匹配
+        if (mAllowedConnectDevicesMAC.contains(mac)) {
+            addDeviceByObject(bleDevice);
+        }
     }
 
     private void addDeviceByObject(BluetoothDevice bleDevice) {
         final DeviceManager mgr;
         String mac = bleDevice.getAddress();
-        if (!mDevMgrMap.containsKey(mac)) {
+        if (!mDevMgrSet.containsKey(mac)) {
             mgr = new DeviceManager(bleDevice);
-            mDevMgrMap.put(mac, mgr);
+            mDevMgrSet.put(mac, mgr);
         } else {
-            mgr = mDevMgrMap.get(mac);
+            mgr = mDevMgrSet.get(mac);
         }
 
         if (mgr.gatt == null && !mIsShutdown) {
@@ -444,7 +496,7 @@ public class BLEManagerActivity extends AppCompatActivity {
     /** 获取匹配的设备管理器 */
     private DeviceManager getMatchedDevMgr(BluetoothGatt gatt) {
         String mac = gatt.getDevice().getAddress();
-        return mDevMgrMap.get(mac);
+        return mDevMgrSet.get(mac);
     }
 
     /**
@@ -650,7 +702,7 @@ public class BLEManagerActivity extends AppCompatActivity {
 
     @SuppressWarnings("SameParameterValue")
     boolean setSendDefaultChannel(String mac, UUID uuid) {
-        DeviceManager mgr = mDevMgrMap.get(mac);
+        DeviceManager mgr = mDevMgrSet.get(mac);
         return (mgr != null) && mgr.setWriteChannel(uuid);
     }
 
@@ -662,7 +714,7 @@ public class BLEManagerActivity extends AppCompatActivity {
         if (encrypt) {
             data = Protocol.wrapped_package(data);
         }
-        DeviceManager mgr = mDevMgrMap.get(mac);
+        DeviceManager mgr = mDevMgrSet.get(mac);
         if (mgr != null && mgr.isConnected && mgr.gatt != null) {
             BluetoothGattCharacteristic ch = mgr.getWriteChannel();
             if (ch != null) {
@@ -686,7 +738,7 @@ public class BLEManagerActivity extends AppCompatActivity {
         synchronized (mGattOperationLock) {
             mGattOperations.clear();
         }
-        for (DeviceManager mgr : mDevMgrMap.values()) {
+        for (DeviceManager mgr : mDevMgrSet.values()) {
             if (mgr.gatt != null && mgr.isConnected) {
                 mgr.gatt.disconnect();
             }
